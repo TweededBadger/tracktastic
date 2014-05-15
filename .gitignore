@@ -1,0 +1,6 @@
+env/
+src/.idea/
+*.exe
+*.png
+*.jpg
+src/testbed.py
