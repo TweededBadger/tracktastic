@@ -24,12 +24,12 @@ class Camera(object):
         #bitmap.SaveFile("screencapture.jpg", wx.BITMAP_TYPE_JPEG)
         #bitmap.SaveFile("screencapture.png", wx.BITMAP_TYPE_PNG)
 
-        return fullfilepath
+        return fullfilepath,screenid
 
     def take_screenshot_all_displays(self,filename="screenshot",filetype=".jpg"):
-        paths = [ self.take_screenshot(screenid=index,filename=filename,filetype=filetype)
+        screenshots = [ self.take_screenshot(screenid=index,filename=filename,filetype=filetype)
                   for index,display in enumerate(self.displays)]
         # for index,display in enumerate(self.displays):
         #     self.take_screenshot(screenid=index)
         #     ]
-        return paths
+        return screenshots
