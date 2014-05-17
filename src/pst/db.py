@@ -31,12 +31,14 @@ class Process(Base):
     filename = Column(String(250), nullable=False)
     process_id = Column(Integer,nullable=False)
     title = Column(String(250), nullable=False)
+    datetime = Column(DateTime,nullable=False)
     process_type_id = Column(Integer,ForeignKey(ProcessType.id))
     process_type = relationship(ProcessType)
-    def __init__(self, filename,process_id,title,session):
+    def __init__(self, filename,process_id,title,session,datetime):
         self.filename = filename
         self.process_id = process_id
         self.title = title
+        self.datetime = datetime
         try:
             process_type = session.query(ProcessType)\
                 .filter(ProcessType.filepath == filename).one()

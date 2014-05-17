@@ -51,7 +51,8 @@ class TestDataBase(unittest.TestCase):
         process = pst.db.Process(filename=currentProcess.filename,
                                  process_id=currentProcess.id,
                                  title=currentProcess.title,
-                                 session=db.session)
+                                 session=db.session,
+                                 datetime=datetime.datetime.now())
         db.session.add(process)
         db.session.commit()
         self.assertTrue(type(process) is pst.db.Process)
