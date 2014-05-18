@@ -5,7 +5,3 @@ class Process(object):
         self.id = process_id
         self.title = title
         self.filename = filename
-
-
-    def test(self):
-        print "hello";

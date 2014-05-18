@@ -5,3 +5,4 @@ src/.idea/
 *.jpg
 src/testbed.py
 *.db
+src/config.ini
