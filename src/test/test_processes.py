@@ -1,3 +1,4 @@
+import json
 import unittest
 import os
 import datetime
@@ -87,6 +88,24 @@ class TestDataBase(unittest.TestCase):
             screenshot_from_db = db.session.query(pst.db.Screenshot) \
                 .filter(pst.db.Screenshot.id == screenshot.id).one()
             self.assertTrue(type(screenshot_from_db) is pst.db.Screenshot)
+        db.session.close()
+        rm(testdb)
+        rm(screenshot_path)
+
+    def test_get_screenshots_json(self):
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+        screenshot_camera = pst.screenshots.Camera()
+        screenshots = screenshot_camera.take_screenshot_all_displays()
+        for screenshot_path, screenshot_id in screenshots:
+            screenshot = db.add_screenshot(screenshot_id, screenshot_path)
+            self.assertTrue(type(screenshot) is pst.db.Screenshot)
+
+        screenshots = [pst.db.row2dict(row) for row in db.get_screenshots()]
+        print json.dumps(screenshots, indent=4, sort_keys=True)
+
+        self.assertTrue(len(screenshots) > 0)
+
         db.session.close()
         rm(testdb)
         rm(screenshot_path)

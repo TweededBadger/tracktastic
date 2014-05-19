@@ -40,6 +40,10 @@ class DBConnection():
         self.session.commit()
         return screenshot_to_add
 
+    def get_screenshots(self):
+        data = self.session.query(Screenshot).all()
+        return data
+
 
 class ProcessType(Base):
     __tablename__ = 'process_type'
@@ -80,6 +84,13 @@ class Screenshot(Base):
     screen_id = Column(Integer, nullable=False)
     file_path = Column(String(250), nullable=False)
     time_taken = Column(DateTime, nullable=False)
+
+def row2dict(row):
+    d = {}
+    for column in row.__table__.columns:
+        d[column.name] = str(getattr(row, column.name))
+
+    return d
 
 
 

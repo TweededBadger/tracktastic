@@ -2,11 +2,12 @@ import cherrypy.lib.auth_basic
 import os
 
 from configobj import ConfigObj
+from pst.DataService import DataService
 
 config = ConfigObj("config.ini")
 
 class WebServer():
-    def __init__(self, options={}):
+    def __init__(self,options={}):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         options.setdefault('port', 8081)
         options.setdefault('screenshots_dir', current_dir)
@@ -38,4 +39,7 @@ class WebInterface():
         pass
     @cherrypy.expose
     def index(self):
-        return "hello"
+        pass
+
+    data = DataService()
+
