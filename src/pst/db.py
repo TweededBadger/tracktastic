@@ -44,6 +44,10 @@ class DBConnection():
         data = self.session.query(Screenshot).all()
         return data
 
+    def get_processes(self):
+        data = self.session.query(DBProcess).all()
+        return data
+
 
 class ProcessType(Base):
     __tablename__ = 'process_type'

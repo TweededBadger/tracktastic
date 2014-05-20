@@ -6,3 +6,4 @@ src/.idea/
 src/testbed.py
 *.db
 src/config.ini
+*.pyc

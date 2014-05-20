@@ -6,6 +6,7 @@ import time
 import pst
 import pst as Scheduler
 
+
 import pst.Process
 import pst.screenshots
 import pst.db
@@ -13,6 +14,8 @@ from pst.db import DBConnection
 from pst.helpers import rm
 
 import pst.WebServer
+from pst.DataService import DataService
+from test import testhelpers
 
 
 class TestProcessFetcher(unittest.TestCase):
@@ -127,6 +130,17 @@ class TestScheduler(unittest.TestCase):
         time.sleep(2)
         self.assertTrue(thread_run)
 
-class TextWebserver(unittest.TestCase):
-    def test_start_webserver(self):
-        server = pst.WebServer()
+class TestDataService(unittest.TestCase):
+    def test_get_screenshots(self):
+        dataservice = DataService()
+        testhelpers.take_and_add_screenshots(dataservice.db)
+        data = dataservice.screenshots()
+        jsonobj = json.loads(data)
+        self.assertTrue(len(jsonobj) > 0)
+
+    def test_get_processes(self):
+        dataservice = DataService()
+        testhelpers.add_process(dataservice.db)
+        data = dataservice.processes()
+        jsonobj = json.loads(data)
+        self.assertTrue(len(jsonobj) > 0)
