@@ -113,6 +113,13 @@ class TestDataBase(unittest.TestCase):
         rm(testdb)
         rm(screenshot_path)
 
+    def test_default_process_category(self):
+        testdb = str(time.time()) + ".db"
+        # testdb = "test.db"
+        db = DBConnection(db_filename=testdb)
+        pc = db.session.query(pst.db.ProcessCategory).one()
+        self.assertTrue(pc.id == 0)
+
 
 class TestScheduler(unittest.TestCase):
     def test_scheduler(self):

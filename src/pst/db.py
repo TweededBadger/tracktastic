@@ -21,6 +21,10 @@ class DBConnection():
         Base.metadata.create_all(self.engine)
         DBSession = sessionmaker(bind=self.engine)
         self.session = DBSession()
+        try:
+            self.create_default_process_category()
+        except:
+            self.session.rollback()
 
     def add_process(self, process):
         processtoadd = DBProcess(filename=process.filename,
@@ -48,11 +52,22 @@ class DBConnection():
         data = self.session.query(DBProcess).all()
         return data
 
+    def create_default_process_category(self):
+        process_category = ProcessCategory(id=0,title="unassigned")
+        self.session.add(process_category)
+        self.session.commit()
+
+class ProcessCategory(Base):
+    __tablename__ = 'process_category'
+    id = Column(Integer, primary_key=True)
+    title = Column(String(250), nullable=False)
 
 class ProcessType(Base):
     __tablename__ = 'process_type'
     id = Column(Integer, primary_key=True)
     filepath = Column(String(250), nullable=False)
+    process_category_id = Column(Integer, ForeignKey(ProcessCategory.id),default=0)
+    process_category = relationship(ProcessCategory)
 
 
 class DBProcess(Base):
@@ -80,6 +95,7 @@ class DBProcess(Base):
         self.process_type = process_type
         self.process_type_id = process_type.id
         print process_type.filepath
+
 
 
 class Screenshot(Base):
