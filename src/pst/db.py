@@ -11,6 +11,7 @@ from sqlalchemy import orm
 from sqlalchemy.orm import object_session
 from sqlalchemy.orm.session import Session
 from sqlalchemy.exc import InvalidRequestError
+from sqlalchemy.util import KeyedTuple
 
 Base = declarative_base()
 
@@ -49,7 +50,7 @@ class DBConnection():
         return data
 
     def get_processes(self):
-        data = self.session.query(DBProcess).all()
+        data = self.session.query(DBProcess,ProcessType,ProcessCategory)
         return data
 
     def create_default_process_category(self):
@@ -61,6 +62,8 @@ class ProcessCategory(Base):
     __tablename__ = 'process_category'
     id = Column(Integer, primary_key=True)
     title = Column(String(250), nullable=False)
+    def __repr__(self):
+        return "<ProcessCategory('%s')>" % self.title
 
 class ProcessType(Base):
     __tablename__ = 'process_type'
@@ -68,6 +71,8 @@ class ProcessType(Base):
     filepath = Column(String(250), nullable=False)
     process_category_id = Column(Integer, ForeignKey(ProcessCategory.id),default=0)
     process_category = relationship(ProcessCategory)
+    def __repr__(self):
+        return "<ProcessType('%s')>" % self.filepath
 
 
 class DBProcess(Base):
@@ -78,7 +83,7 @@ class DBProcess(Base):
     title = Column(String(250), nullable=False)
     datetime = Column(DateTime, nullable=False)
     process_type_id = Column(Integer, ForeignKey(ProcessType.id))
-    process_type = relationship(ProcessType)
+    process_type = relationship(ProcessType,backref='process')
 
     def __init__(self, filename, process_id, title, session, datetime):
         self.filename = filename
@@ -95,6 +100,8 @@ class DBProcess(Base):
         self.process_type = process_type
         self.process_type_id = process_type.id
         print process_type.filepath
+    def __repr__(self):
+        return "<DBProcess('%s')>" % self.filename
 
 
 
@@ -106,11 +113,24 @@ class Screenshot(Base):
     time_taken = Column(DateTime, nullable=False)
 
 def row2dict(row):
-    d = {}
-    for column in row.__table__.columns:
-        d[column.name] = str(getattr(row, column.name))
+    if (type(row)is KeyedTuple):
+        d = {}
+        firstrow = True
+        for subrow in row:
+            d[subrow.__tablename__] = {}
+            for column in subrow.__table__.columns:
+                if firstrow:
+                    d[column.name] = str(getattr(subrow, column.name))
+                else:
+                    d[subrow.__tablename__][column.name] = str(getattr(subrow, column.name))
+            firstrow = False
+        return d
+    else:
+        d = {}
+        for column in row.__table__.columns:
+            d[column.name] = str(getattr(row, column.name))
 
-    return d
+        return d
 
 
 

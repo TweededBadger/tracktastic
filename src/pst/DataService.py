@@ -6,7 +6,8 @@ import pst
 
 
 class DataService:
-    def __init__(self):
+    def __init__(self,dbname='pst.db'):
+        self.dbname = dbname
         pass
 
     @cherrypy.expose
@@ -15,7 +16,7 @@ class DataService:
 
     @cherrypy.expose
     def screenshots(self, *args, **kwargs):
-        db = DBConnection()
+        db = DBConnection(self.dbname)
         screenshots = [pst.db.row2dict(row) for row in db.get_screenshots()]
         out = json.dumps(screenshots, indent=4, sort_keys=True)
         db.session.close()
@@ -23,7 +24,7 @@ class DataService:
 
     @cherrypy.expose
     def processes(self, *args, **kwargs):
-        db = DBConnection()
+        db = DBConnection(self.dbname)
         processes = [pst.db.row2dict(row) for row in db.get_processes()]
         out = json.dumps(processes, indent=4, sort_keys=True)
         db.session.close()

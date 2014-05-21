@@ -139,15 +139,23 @@ class TestScheduler(unittest.TestCase):
 
 class TestDataService(unittest.TestCase):
     def test_get_screenshots(self):
-        dataservice = DataService()
-        testhelpers.take_and_add_screenshots(dataservice.db)
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+        testhelpers.take_and_add_screenshots(db)
+
+        dataservice = DataService(testdb)
         data = dataservice.screenshots()
+        print data
         jsonobj = json.loads(data)
         self.assertTrue(len(jsonobj) > 0)
+        db.session.close()
 
     def test_get_processes(self):
-        dataservice = DataService()
-        testhelpers.add_process(dataservice.db)
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+        testhelpers.add_process(db)
+        dataservice = DataService(testdb)
         data = dataservice.processes()
+        print data
         jsonobj = json.loads(data)
         self.assertTrue(len(jsonobj) > 0)
