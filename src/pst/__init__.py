@@ -17,9 +17,9 @@ class Main():
     def __init__(self):
         self.db = DBConnection()
         self.schedule_camera = Scheduler(ScreenshotLoop(db=self.db),
-                                         cycleTime=datetime.timedelta(seconds=5))
+                                         cycleTime=datetime.timedelta(seconds=10),threadName="CameraThread")
         self.schedule_camera.thread.start()
-        self.process_loop = Scheduler(ProccessLoop(db=self.db), cycleTime=datetime.timedelta(seconds=5))
+        self.process_loop = Scheduler(ProccessLoop(db=self.db), cycleTime=datetime.timedelta(seconds=10),threadName="ProcessThread")
         self.process_loop.thread.start()
 
         self.start_webserver()
@@ -40,7 +40,7 @@ class Main():
 
 class ScreenshotLoop():
     def __init__(self, db):
-        self.db = db
+        self.db = DBConnection()
         screenshot_folder = config['screenshot_folder']
         self.camera = screenshots.Camera(save_path=screenshot_folder)
 
@@ -52,7 +52,7 @@ class ScreenshotLoop():
 
 class ProccessLoop():
     def __init__(self, db):
-        self.db = db
+        self.db = DBConnection()
 
     def run(self):
         current_process = processes.get_current()

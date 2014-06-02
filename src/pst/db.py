@@ -19,6 +19,7 @@ Base = declarative_base()
 class DBConnection():
     def __init__(self, db_filename='pst.db'):
         self.engine = create_engine('sqlite:///' + db_filename)
+        self.engine.raw_connection().connection.text_factory = str
         Base.metadata.create_all(self.engine)
         DBSession = sessionmaker(bind=self.engine)
         self.session = DBSession()
@@ -46,11 +47,17 @@ class DBConnection():
         return screenshot_to_add
 
     def get_screenshots(self):
-        data = self.session.query(Screenshot).all()
+        data = self.session.query(Screenshot).limit(100)
         return data
 
     def get_processes(self):
-        data = self.session.query(DBProcess,ProcessType,ProcessCategory)
+        # data = self.session.query(DBProcess,ProcessType,ProcessCategory).order_by(DBProcess.datetime.desc()).limit(100)
+        data = self.session.query(DBProcess,ProcessType,ProcessCategory)\
+            .join(ProcessType)\
+            .join(ProcessCategory)\
+            .order_by(DBProcess.datetime.desc())\
+            .limit(100)
+        # data = self.session.query(DBProcess,ProcessType).join(ProcessType).limit(10)
         return data
 
     def create_default_process_category(self):

@@ -16,13 +16,13 @@ class WebServer():
             'log.screen':True
         }
         cherrypy.config.update(options_dict)
-
+        print current_dir
         print options['screenshots_dir']
         conf = {
             '/': {
-                'tools.staticdir.root': current_dir+"/wwwroot",
-                'tools.encode.on': True,
-                'tools.encode.encoding': 'utf-8',
+                'tools.staticdir.on': True,
+                'tools.staticdir.dir': current_dir+"/wwwroot",
+                # 'tools.staticdir.dir': "C:\\Work\\Personal\\Python\\TimeTracker\\src\\wwwroot\\",
             },
             '/screenshots' : {
                 'tools.staticdir.on': True,
