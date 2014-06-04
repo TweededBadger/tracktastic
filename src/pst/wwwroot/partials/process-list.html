@@ -1,0 +1,17 @@
+Search: <input ng-model="query">
+
+Sort by: {{orderProp}}
+  <select ng-model="orderProp">
+    <option value="title">Alphabetical</option>
+    <option value="age">Newest</option>
+    <option value="-age">Oldest</option>
+  </select>
+
+
+<ul>
+    <li ng-repeat="process in processes | filter:query | orderBy:orderProp">
+        <div>{{process.title}}</div>
+        <div>{{process.datetime}}</div>
+        <div>{{process.filename}}</div>
+    </li>
+</ul>

@@ -55,7 +55,7 @@ class DBConnection():
         data = self.session.query(DBProcess,ProcessType,ProcessCategory)\
             .join(ProcessType)\
             .join(ProcessCategory)\
-            .order_by(DBProcess.datetime.desc())\
+            .order_by(DBProcess.datetime.asc())\
             .limit(100)
         # data = self.session.query(DBProcess,ProcessType).join(ProcessType).limit(10)
         return data

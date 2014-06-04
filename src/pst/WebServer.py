@@ -22,6 +22,7 @@ class WebServer():
             '/': {
                 'tools.staticdir.on': True,
                 'tools.staticdir.dir': current_dir+"/wwwroot",
+                'tools.staticdir.index': 'index.html'
                 # 'tools.staticdir.dir': "C:\\Work\\Personal\\Python\\TimeTracker\\src\\wwwroot\\",
             },
             '/screenshots' : {
