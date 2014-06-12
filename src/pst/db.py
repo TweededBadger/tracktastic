@@ -2,7 +2,7 @@ import os
 import sys
 import datetime
 
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, and_
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
@@ -23,19 +23,34 @@ class DBConnection():
         Base.metadata.create_all(self.engine)
         DBSession = sessionmaker(bind=self.engine)
         self.session = DBSession()
+        self.current_process = None
         try:
             self.create_default_process_category()
         except:
             self.session.rollback()
 
     def add_process(self, process):
+
         processtoadd = DBProcess(filename=process.filename,
                                  process_id=process.id,
                                  title=process.title,
                                  session=self.session,
-                                 datetime=datetime.datetime.now())
+                                 start_time=datetime.datetime.now(),
+                                 end_time=datetime.datetime.now())
+        try:
+            if (self.current_process.filename == processtoadd.filename and
+                self.current_process.title == processtoadd.title):
+                self.current_process.end_time = datetime.datetime.now()
+                self.session.commit()
+                print ("Updated Process")
+                return self.current_process
+        except:
+            pass
+        print ("Adding Process")
         self.session.add(processtoadd)
         self.session.commit()
+        self.current_process = processtoadd
+        print ("Added Process")
         return processtoadd
 
     def add_screenshot(self, screenshot_id, screenshot_path):
@@ -50,13 +65,14 @@ class DBConnection():
         data = self.session.query(Screenshot).limit(100)
         return data
 
-    def get_processes(self):
+    def get_processes(self,start_time,end_time):
         # data = self.session.query(DBProcess,ProcessType,ProcessCategory).order_by(DBProcess.datetime.desc()).limit(100)
         data = self.session.query(DBProcess,ProcessType,ProcessCategory)\
             .join(ProcessType)\
             .join(ProcessCategory)\
-            .order_by(DBProcess.datetime.asc())\
-            .limit(100)
+            .filter(and_(DBProcess.start_time <=end_time,DBProcess.start_time>=start_time))\
+            .order_by(DBProcess.start_time.desc())\
+            # .limit(100)
         # data = self.session.query(DBProcess,ProcessType).join(ProcessType).limit(10)
         return data
 
@@ -88,25 +104,25 @@ class DBProcess(Base):
     filename = Column(String(250), nullable=False)
     process_id = Column(Integer, nullable=False)
     title = Column(String(250), nullable=False)
-    datetime = Column(DateTime, nullable=False)
+    start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime, nullable=False)
     process_type_id = Column(Integer, ForeignKey(ProcessType.id))
     process_type = relationship(ProcessType,backref='process')
 
-    def __init__(self, filename, process_id, title, session, datetime):
+    def __init__(self, filename, process_id, title, session, start_time,end_time):
         self.filename = filename
         self.process_id = process_id
         self.title = title
-        self.datetime = datetime
+        self.start_time = start_time
+        self.end_time = end_time
         try:
             process_type = session.query(ProcessType) \
                 .filter(ProcessType.filepath == filename).one()
         except InvalidRequestError:
-            print "createfilename"
             process_type = ProcessType(filepath=filename)
             session.add(process_type)
         self.process_type = process_type
         self.process_type_id = process_type.id
-        print process_type.filepath
     def __repr__(self):
         return "<DBProcess('%s')>" % self.filename
 

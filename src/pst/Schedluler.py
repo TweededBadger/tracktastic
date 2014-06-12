@@ -46,7 +46,7 @@ class Scheduler:
                 self.lastRun = currentTime
                 try:
                     if not self.silent:
-                        #logger.log(u"Starting new thread: "+self.threadName, logger.DEBUG)
+                        # logger.log(u"Starting new thread: "+self.threadName, logger.DEBUG)
                         print(u"Starting new thread: "+self.threadName)
                         pass
                     self.action.run()

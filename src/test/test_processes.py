@@ -63,6 +63,23 @@ class TestDataBase(unittest.TestCase):
         self.assertTrue(type(process) is pst.db.DBProcess)
         db.session.close()
 
+    def test_save_and_update_process(self):
+        testdb = str(time.time())+".db"
+        # testdb = "test.db"
+        current_process = pst.processes.get_current()
+        db = DBConnection(db_filename=testdb)
+        process_start = db.add_process(current_process)
+        time.sleep(0.5)
+        second_current_process = pst.processes.get_current()
+        process_end = db.add_process(current_process)
+        self.assertEquals(process_start.id,process_end.id);
+        self.assertNotEquals(process_start.start_time,process_end.end_time);
+        db.session.close()
+        rm(testdb)
+
+
+
+
     def test_save_screenshot(self):
         testdb = str(time.time()) + ".db"
         db = DBConnection(db_filename=testdb)

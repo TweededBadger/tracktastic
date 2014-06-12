@@ -6,8 +6,6 @@ Sort by: {{orderProp}}
     <option value="age">Newest</option>
     <option value="-age">Oldest</option>
   </select>
-
-
 <ul>
     <li ng-repeat="process in processes | filter:query | orderBy:orderProp">
         <div>{{process.title}}</div>

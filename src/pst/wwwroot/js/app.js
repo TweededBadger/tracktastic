@@ -2,7 +2,8 @@ $window = $(window);
 var trackApp = angular.module('trackApp', [
     'ngRoute',
     'tracktastic',
-    'd3'
+    'd3',
+    'ui.bootstrap'
 ]);
 
 trackApp.config(['$routeProvider',
@@ -29,7 +30,7 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
          scope: {
              data:'=',
              onClick:'&',
-             test:'='
+             test:'&'
          },
          link: function (scope, element, attrs) {
              d3Service.d3().then(function (d3) {
@@ -63,8 +64,8 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                     first = data[0]
                     last = data[data.length-1]
                     console.log(first);
-                    var starttime = new Date(first.datetime).getTime();
-                    var endtime = new Date(last.datetime).getTime();
+                    var starttime = new Date(first.start_time).getTime();
+                    var endtime = new Date(last.end_time).getTime();
                     console.log(starttime);
                     console.log(endtime);
 
@@ -98,7 +99,7 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
 //                            return xScale(lasttime);
                             if (i != 0) {
                                 var lastD = data[i-1];
-                                var lasttime = new Date(lastD.datetime).getTime()
+                                var lasttime = new Date(lastD.start_time).getTime()
                                 return  xScale(lasttime - starttime);
                             } else {
                                 return 0;
@@ -109,10 +110,12 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                             return 0;
                             return i * (barHeight + barPadding);
                         })
-                        .on('click',function(d,i) {
-                            console.log(d);
-                            scope.test();
+                        .on('mouseover',function(d,i) {
+                            //console.log(d);
+                            //scope.test();
+//                            scope.test();
                             return scope.onClick({item: d});
+
                         })
                         .attr('fill', function (d) {
                             return color(d.process_type.id);
@@ -121,11 +124,11 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
 //                        .duration(1000)
                         .attr('width', function (d,i) {
 
-                            var timediff = new Date(d.datetime).getTime();
+                            var timediff = new Date(d.start_time).getTime();
 
                             if (i != 0) {
                                 var lastD = data[i-1];
-                                var lasttime = new Date(lastD.datetime).getTime()
+                                var lasttime = new Date(lastD.start_time).getTime()
 
                                 return  xScale(timediff - lasttime);
                             } else {
@@ -147,6 +150,8 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
          }
     }
 }]);
+
+
 trackApp.directive('d3Barsxx', ['d3Service', function (d3Service) {
     return {
         restrict: 'EA',

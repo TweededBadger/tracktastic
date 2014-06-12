@@ -16,10 +16,10 @@ config = ConfigObj("config.ini")
 class Main():
     def __init__(self):
         self.db = DBConnection()
-        self.schedule_camera = Scheduler(ScreenshotLoop(db=self.db),
-                                         cycleTime=datetime.timedelta(seconds=10),threadName="CameraThread")
-        self.schedule_camera.thread.start()
-        self.process_loop = Scheduler(ProccessLoop(db=self.db), cycleTime=datetime.timedelta(seconds=10),threadName="ProcessThread")
+        # self.schedule_camera = Scheduler(ScreenshotLoop(db=self.db),
+        #                                  cycleTime=datetime.timedelta(seconds=1),threadName="CameraThread")
+        # self.schedule_camera.thread.start()
+        self.process_loop = Scheduler(ProccessLoop(db=self.db), cycleTime=datetime.timedelta(seconds=1),threadName="ProcessThread")
         self.process_loop.thread.start()
 
         self.start_webserver()
@@ -56,8 +56,9 @@ class ProccessLoop():
 
     def run(self):
         current_process = processes.get_current()
-        print current_process.title
-        self.db.add_process(current_process)
+        print "Adding Process: "+ current_process.filename
+        added_process = self.db.add_process(current_process)
+        print "Added Process: "+ str(added_process.id)
 
 
 def main():

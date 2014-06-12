@@ -2,27 +2,65 @@
 <html ng-app="trackApp" >
 <!--<html  >-->
 <head>
-    <title ng-bind-template="Google Phone Gallery: {{query}}">Google Phone Gallery</title>
+    <title>Tracktastic</title>
+    <script src="js/extras.js"></script>
     <script src="js/jquery-2.1.1.js"></script>
     <script src="js/angular.js"></script>
+    <script src="js/ui-bootstrap-tpls-0.11.0.js"></script>
 <script src="js/angular-route.js"></script>
 <script src="js/app.js"></script>
 <script src="js/controllers.js"></script>
+<script src="js/controllers/pickerCtrl.js"></script>
+<script src="js/directives/picker.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.css"/>
+    <link rel="stylesheet" href="css/bootstrap-theme.css"/>
 </head>
 <body>
 <div ng-controller="TracktasticCtrl">
-    <d3-barsxx data="data"></d3-barsxx>
-    <d3-process data="processes" test = "test2" label="Label" on-click="OnClick(item)" ></d3-process>
+
+    <div class="row" picker>
+        <div class="col-md-6">
+            <p class="input-group">
+              <input type="text" class="form-control" datepicker-popup="dd-MMMM-yyyy" ng-model="dt" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+              <span class="input-group-btn">
+                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+              </span>
+            </p>
+        </div>
+    </div>
+
+    <!--<d3-barsxx data="data"></d3-barsxx>-->
+    <d3-process data="processes" test = "testfunc()" label="Label" on-click="trackClick(item)"></d3-process>
 
     <div class="columns large-12 small-12" ng-show="showDetailPanel">
     <h3>Details</h3>
-    <h4 class="ng-binding">Item:</h4>
+    <h4 class="ng-binding">Title: {{detailItem.title}}</h4>
+    <h4 class="ng-binding">Process: {{detailItem.filename}}</h4>
+    <h4 class="ng-binding">Process: {{detailItem.start_time | date:'shortTime'}}</h4>
     <a ng-click="showDetailPanel=false">Hide</a>
+
+
+
   </div>
 
+    <div>
+        Sort by: {{orderProp}}
+        <select ng-model="orderProp">
+            <option value="title">Alphabetical</option>
+            <option value="datetime">Newest</option>
+            <option value="-datetime">Oldest</option>
+        </select>
+        <ul>
+            <li ng-repeat="process in processes | filter:query | orderBy:orderProp">
+                <div>{{process.title}}</div>
+                <div>{{process.datetime | date:'shortTime'}}</div>
+                <div>{{process.filename}}</div>
+            </li>
+        </ul>
+    </div>
 </div>
 
-<div ng-view></div>
+<!--<div ng-view></div>-->
 
 
 <!--<script src="js/services.js"></script>-->
