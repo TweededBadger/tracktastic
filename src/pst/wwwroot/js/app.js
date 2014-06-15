@@ -3,7 +3,8 @@ var trackApp = angular.module('trackApp', [
     'ngRoute',
     'tracktastic',
     'd3',
-    'ui.bootstrap'
+    'ui.bootstrap',
+    'ui.sortable'
 ]);
 
 trackApp.config(['$routeProvider',
@@ -40,7 +41,7 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                  var svg = d3.select(element[0])
                     .append('svg')
                     .style('width', '100%');
-                 svg.attr('height', "100px");
+                 svg.attr('height', "200px");
 
                  // Browser onresize event
                 window.onresize = function () {
@@ -107,8 +108,8 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                         })
 //                        .attr('x',xScale(lasttime))
                         .attr('y', function (d, i) {
-                            return 0;
-                            return i * (barHeight + barPadding);
+//                            return 0;
+                            return d.process_category.id * (barHeight + barPadding);
                         })
                         .on('mouseover',function(d,i) {
                             //console.log(d);
@@ -118,22 +119,24 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
 
                         })
                         .attr('fill', function (d) {
-                            return color(d.process_type.id);
+                            return color(d.process_category.id);
                         })
 //                        .transition()
 //                        .duration(1000)
                         .attr('width', function (d,i) {
 
-                            var timediff = new Date(d.start_time).getTime();
+                            var start = new Date(d.start_time).getTime();
+                            var end = new Date(d.end_time).getTime();
+                            return  xScale(end - start);
 
-                            if (i != 0) {
-                                var lastD = data[i-1];
-                                var lasttime = new Date(lastD.start_time).getTime()
-
-                                return  xScale(timediff - lasttime);
-                            } else {
-                                return xScale(timediff);
-                            }
+//                            if (i != 0) {
+//                                var lastD = data[i-1];
+//                                var lasttime = new Date(lastD.start_time).getTime()
+//
+//                                return  xScale(timediff - lasttime);
+//                            } else {
+//                                return xScale(timediff);
+//                            }
 
 //                            lasttime = new Date(d.datetime).getTime();
 

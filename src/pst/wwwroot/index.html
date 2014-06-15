@@ -5,17 +5,22 @@
     <title>Tracktastic</title>
     <script src="js/extras.js"></script>
     <script src="js/jquery-2.1.1.js"></script>
+    <!--<script type='text/javascript' src='http://code.jquery.com/jquery-1.8.3.js'></script>-->
+    <script src="js/jquery-ui-1.10.4.js"></script>
     <script src="js/angular.js"></script>
     <script src="js/ui-bootstrap-tpls-0.11.0.js"></script>
+    <script src="js/sortable.js"></script>
+    <!--<script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui/0.4.0/angular-ui.min.js"></script>-->
 <script src="js/angular-route.js"></script>
 <script src="js/app.js"></script>
 <script src="js/controllers.js"></script>
 <script src="js/controllers/pickerCtrl.js"></script>
+<script src="js/controllers/processCategoryCtrl.js"></script>
 <script src="js/directives/picker.js"></script>
     <link rel="stylesheet" href="css/bootstrap.css"/>
     <link rel="stylesheet" href="css/bootstrap-theme.css"/>
 </head>
-<body>
+<body class="container">
 <div ng-controller="TracktasticCtrl">
 
     <div class="row" picker>
@@ -42,22 +47,37 @@
 
 
   </div>
+    <div ng:controller="ProcessCategoryCtrl" class="col-lg-5">
 
-    <div>
-        Sort by: {{orderProp}}
-        <select ng-model="orderProp">
-            <option value="title">Alphabetical</option>
-            <option value="datetime">Newest</option>
-            <option value="-datetime">Oldest</option>
-        </select>
-        <ul>
-            <li ng-repeat="process in processes | filter:query | orderBy:orderProp">
-                <div>{{process.title}}</div>
-                <div>{{process.datetime | date:'shortTime'}}</div>
-                <div>{{process.filename}}</div>
-            </li>
-        </ul>
+
+        <div ui:sortable ng:model="process_cats">
+            <div ng:repeat="item in process_cats" class="item" style="cursor: move;"><div class="btn btn-default btn-block">{{$index}} - {{item.title}}</div></div>
+        </div>
+        <hr />
+
+        <div ng:repeat="cat in process_cats">
+            {{$index}} - {{cat.title}}
+        </div>
     </div>
+
+
+
+
+    <!--<div>-->
+        <!--Sort by: {{orderProp}}-->
+        <!--<select ui0 ng-model="orderProp">-->
+            <!--<option value="title">Alphabetical</option>-->
+            <!--<option value="datetime">Newest</option>-->
+            <!--<option value="-datetime">Oldest</option>-->
+        <!--</select>-->
+        <!--<ul>-->
+        <!--<li ng-repeat="process in processes | filter:query | orderBy:orderProp">-->
+            <!--<div>{{process.title}}</div>-->
+            <!--<div>{{process.datetime | date:'shortTime'}}</div>-->
+            <!--<div>{{process.filename}}</div>-->
+        <!--</li>-->
+    <!--</ul>-->
+    <!--</div>-->
 </div>
 
 <!--<div ng-view></div>-->

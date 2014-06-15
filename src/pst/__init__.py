@@ -56,9 +56,7 @@ class ProccessLoop():
 
     def run(self):
         current_process = processes.get_current()
-        print "Adding Process: "+ current_process.filename
         added_process = self.db.add_process(current_process)
-        print "Added Process: "+ str(added_process.id)
 
 
 def main():

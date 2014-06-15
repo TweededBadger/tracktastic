@@ -23,7 +23,7 @@ Base = declarative_base()
 
 class DBConnection():
     def __init__(self, db_filename='pst.db'):
-        self.engine = create_engine('sqlite:///' + db_filename)
+        self.engine = create_engine('sqlite:///' + db_filename, echo=False)
 
         self.engine.raw_connection().connection.text_factory = str
         Base.metadata.create_all(self.engine)
@@ -87,7 +87,7 @@ class DBConnection():
         data = self.session.query(Screenshot).limit(100)
         return data
 
-    def get_processes(self,start_time=None,end_time=None):
+    def get_processes(self,start_time=None,end_time=None,pid=None):
         if start_time is None:
             start_time = 0
         if end_time is None:
@@ -97,9 +97,15 @@ class DBConnection():
             .join(ProcessType)\
             .join(ProcessCategory)\
             .filter(and_(DBProcess.start_time <=end_time,DBProcess.start_time>=start_time))\
-            # .order_by(DBProcess.start_time.desc())\
+            .order_by(DBProcess.start_time.asc())\
             # .limit(100)
         # data = self.session.query(DBProcess,ProcessType).join(ProcessType).limit(10)
+        if (pid):
+            data = data.filter(DBProcess.id == pid)
+        return data
+
+    def get_process_categories(self):
+        data = self.session.query(ProcessCategory)
         return data
 
     def create_default_process_category(self):
@@ -109,12 +115,19 @@ class DBConnection():
 
     def assign_categories(self):
         categories = self.session.query(ProcessCategory)
-        process_types = self.session.query(ProcessType)
+        # process_types = self.session.query(ProcessType)
         for category in categories:
-            for process_type in process_types:
-                if category.title_search.lower() in process_type.title.lower() and \
-                    category.filename_search.lower() in process_type.filepath.lower():
-                    process_type.process_category = category
+            matched = self.session.query(ProcessType)\
+                .filter(ProcessType.title.like("%{0}%".format(category.title_search)),
+                        ProcessType.filepath.like("%{0}%".format(category.filename_search)))
+
+            for match in matched:
+                match.process_category = category
+
+            # for process_type in process_types:
+            #     if category.title_search.lower() in process_type.title.lower() and \
+            #         category.filename_search.lower() in process_type.filepath.lower():
+            #         process_type.process_category = category
 
 
         self.session.commit()
@@ -127,6 +140,7 @@ class ProcessCategory(Base):
     title = Column(String(250), nullable=False)
     title_search = Column(String(250), default='')
     filename_search = Column(String(250), default='')
+    order = Column(Integer,default=0)
     def __repr__(self):
         return "<ProcessCategory('%s')>" % self.title
 
@@ -155,7 +169,6 @@ class DBProcess(Base):
     def __init__(self, filename, process_id, title, session, start_time,end_time):
         self.filename = filename
         self.process_id = process_id
-        print("TITLE: "+title)
         self.title = title.encode('string_escape')
         self.start_time = start_time
         self.end_time = end_time
