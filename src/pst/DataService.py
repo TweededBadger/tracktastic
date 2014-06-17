@@ -58,9 +58,18 @@ class DataService:
             new_cat = db.add_category(title,title_search,filename_search)
             if assign:
                 db.assign_categories()
-            out = json.dumps(pst.db.row2dict(new_cat), indent=4, sort_keys=True)
-            db.session.close()
-            return out
+            # out = json.dumps(pst.db.row2dict(new_cat), indent=4, sort_keys=True)
+            # db.session.close()
+            # return out
+        if 'DELETE' in cherrypy.request.method:
+            id = cherrypy.request.params.get("id")
+            db.delete_category(id)
+            try:
+                assign = cherrypy.request.params.get("assign")
+            except:
+                assign = False
+            if assign:
+                db.assign_categories()
 
         process_categories = db.get_process_categories()
         data = [pst.db.row2dict(row) for row in process_categories]
@@ -80,6 +89,14 @@ class DataService:
             edited_data = db.edit_categories(data)
             edited_data_dict =[pst.db.row2dict(row) for row in edited_data]
             out = json.dumps(edited_data_dict, indent=4, sort_keys=True)
+
+            try:
+                assign = cherrypy.request.params.get("assign")
+            except:
+                assign = False
+            if assign:
+                db.assign_categories()
+
             db.session.close()
             return out
         db.session.close()

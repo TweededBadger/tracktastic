@@ -67,6 +67,15 @@ class DBConnection():
         # print ("Added Process")
         return processtoadd
 
+    def set_current_process_inactive(self):
+        now = datetime.datetime.now()
+        try:
+            self.current_process.end_time = now
+            self.session.commit()
+            self.current_process = None
+        except:
+            pass
+
     def add_screenshot(self, screenshot_id, screenshot_path):
         screenshot_to_add = Screenshot(screen_id=screenshot_id,
                                        file_path=screenshot_path,
@@ -82,6 +91,11 @@ class DBConnection():
         self.session.add(new_cat)
         self.session.commit()
         return new_cat
+    def delete_category(self,id):
+        self.session.query(ProcessCategory)\
+            .filter(ProcessCategory.id == id)\
+            .delete()
+        self.session.commit()
 
     def get_screenshots(self):
         data = self.session.query(Screenshot).limit(100)

@@ -8,7 +8,7 @@ import time
 import cherrypy
 import pst
 import pst as Scheduler
-
+from pst.ActivityChecker import ActivityChecker
 
 import pst.Process
 import pst.screenshots
@@ -172,6 +172,28 @@ class TestDataBase(unittest.TestCase):
 
 
 
+    def test_inactive_then_active_process(self):
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+        current_process = pst.processes.get_current()
+        db.add_process(current_process)
+        time.sleep(0.1)
+        db.set_current_process_inactive()
+        time.sleep(0.1)
+        db.add_process(current_process)
+        time.sleep(0.1)
+        db.set_current_process_inactive()
+
+        processes = [pst.db.row2dict(row) for row in db.get_processes()]
+        self.assertEqual(len(processes),2)
+        self.assertGreater(processes[0]['end_time'],processes[0]['start_time'])
+        self.assertGreater(processes[1]['end_time'],processes[1]['start_time'])
+        self.assertGreater(processes[1]['start_time'],processes[0]['end_time'])
+
+        db.session.close()
+        rm(testdb)
+
+
 
 class TestScheduler(unittest.TestCase):
     def test_scheduler(self):
@@ -251,7 +273,6 @@ class TestWebService(BaseCherryPyTestCase):
         # self.assertEqual(response.body, ['hello world'])
 
     def test_create_process_category(self):
-
         test_title = random_string(10)
         test_title_search = random_string(10)
         test_filename_search = random_string(10)
@@ -266,15 +287,41 @@ class TestWebService(BaseCherryPyTestCase):
                                       filename_search=test_filename_search,
                                       assign=True)
         jsonobj = json.loads('\n\r'.join(response.body))
-        print jsonobj
-        self.assertEqual(jsonobj['title'],test_title)
-        self.assertEqual(jsonobj['title_search'],test_title_search)
-        self.assertEqual(jsonobj['filename_search'],test_filename_search)
+        new_cat = [x for x in jsonobj if x['title'] == test_title][0]
+        self.assertEqual(new_cat['title'],test_title)
+        self.assertEqual(new_cat['title_search'],test_title_search)
+        self.assertEqual(new_cat['filename_search'],test_filename_search)
 
         process_responce = self.webapp_request('/data/processes',id=process.id)
         process_jsonobj = json.loads('\n\r'.join(process_responce.body))
-        print process_jsonobj
-        self.assertEqual(jsonobj['id'],process_jsonobj[0]['process_category']['id'])
+        self.assertEqual(new_cat['id'],process_jsonobj[0]['process_category']['id'])
+
+    def test_delete_process_category(self):
+        test_title = random_string(10)
+        test_title_search = random_string(10)
+        test_filename_search = random_string(10)
+        response = self.webapp_request('/data/process_categories',
+                                      method='POST',
+                                      title=test_title,
+                                      title_search= test_title_search,
+                                      filename_search=test_filename_search,
+                                      assign=True)
+        jsonobj = json.loads('\n\r'.join(response.body))
+        new_cat = [x for x in jsonobj if x['title'] == test_title][0]
+        self.assertEqual(new_cat['title'],test_title)
+        self.assertEqual(new_cat['title_search'],test_title_search)
+        self.assertEqual(new_cat['filename_search'],test_filename_search)
+
+        response2 = self.webapp_request('/data/process_categories',
+                                      method='DELETE',
+                                      id=new_cat['id'],
+                                      assign=True)
+        jsonobj2 = json.loads('\n\r'.join(response2.body))
+        print jsonobj2
+        self.assertEqual(len(jsonobj2),1)
+        self.assertEqual(len([x for x in jsonobj2 if x['title'] == test_title]),0)
+
+
 
     def test_reorder(self):
         new_cat_1 = self.db.add_category(title="TITLE1",title_search = "",filename_search = "")
@@ -311,6 +358,29 @@ class TestWebService(BaseCherryPyTestCase):
         self.server.close()
         self.db.session.close()
         rm(self.testdb)
+
+
+class TestActivityCheckerMouse(unittest.TestCase):
+    def setUp(self):
+        self.ac = ActivityChecker()
+    def test_activity_checker_creation(self):
+        time.sleep(0.5)
+        self.assertTrue(self.ac.active)
+    def test_no_activity(self):
+        self.ac.timeout = 1
+        print "Don't move the mouse"
+        time.sleep(2)
+        self.assertFalse(self.ac.checkActive())
+    def test_activity(self):
+        self.ac.timeout = 1
+        print "Move the mouse"
+        time.sleep(2)
+        self.assertTrue(self.ac.checkActive())
+    def tearDown(self):
+        self.ac.stop()
+        time.sleep(0.5)
+
+
 
 
 

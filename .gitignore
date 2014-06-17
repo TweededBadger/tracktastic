@@ -9,3 +9,4 @@ src/config.ini
 *.pyc
 *.log
 src/pst/wwwroot/.idea
+src/pyHook/

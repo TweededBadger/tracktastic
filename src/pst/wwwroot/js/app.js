@@ -41,7 +41,8 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                  var svg = d3.select(element[0])
                     .append('svg')
                     .style('width', '100%');
-                 svg.attr('height', "200px");
+                 var maxy = 0;
+                 svg.attr('height', "0px");
 
                  // Browser onresize event
                 window.onresize = function () {
@@ -98,18 +99,27 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
 //                        .attr('width', 140)
                         .attr('x', function(d,i){
 //                            return xScale(lasttime);
-                            if (i != 0) {
-                                var lastD = data[i-1];
-                                var lasttime = new Date(lastD.start_time).getTime()
-                                return  xScale(lasttime - starttime);
-                            } else {
-                                return 0;
-                            }
+                            var start = new Date(d.start_time).getTime();
+                            return xScale(start - starttime)
+
+//                            if (i != 0) {
+//                                var lastD = data[i-1];
+//                                var lasttime = new Date(lastD.start_time).getTime()
+//                                return  xScale(lasttime - starttime);
+//                            } else {
+//                                return 0;
+//                            }
                         })
 //                        .attr('x',xScale(lasttime))
                         .attr('y', function (d, i) {
 //                            return 0;
+                            var yval = d.process_category.id * (barHeight + barPadding);
+                            if (yval > maxy) {
+                                maxy = yval;
+                                svg.attr('height', yval+barHeight);
+                            }
                             return d.process_category.id * (barHeight + barPadding);
+
                         })
                         .on('mouseover',function(d,i) {
                             //console.log(d);
