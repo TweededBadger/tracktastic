@@ -7,7 +7,7 @@ import sys
 import datetime
 import traceback
 
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, and_, update
+from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, and_, update, Table
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
@@ -107,13 +107,14 @@ class DBConnection():
         if end_time is None:
             end_time = datetime.datetime.now()
         # data = self.session.query(DBProcess,ProcessType,ProcessCategory).order_by(DBProcess.datetime.desc()).limit(100)
-        data = self.session.query(DBProcess,ProcessType,ProcessCategory)\
+        data = self.session.query(DBProcess,ProcessType)\
             .join(ProcessType)\
-            .join(ProcessCategory)\
             .filter(and_(DBProcess.start_time <=end_time,DBProcess.start_time>=start_time))\
             .order_by(DBProcess.start_time.asc())\
-            # .limit(100)
+            .limit(100)
         # data = self.session.query(DBProcess,ProcessType).join(ProcessType).limit(10)
+        # data = self.session.query(ProcessCategory).join(ProcessType).join(DBProcess)
+        # data = self.session.query(DBProcess,ProcessType)#.join(ProcessType)#.join(ProcessCategory)
         if (pid):
             data = data.filter(DBProcess.id == pid)
         return data
@@ -137,8 +138,8 @@ class DBConnection():
                         ProcessType.filepath.like("%{0}%".format(category.filename_search)))
 
             for match in matched:
-                match.process_category = category
-
+                # match.process_category = category
+                match.process_categories.append(category)
             # for process_type in process_types:
             #     if category.title_search.lower() in process_type.title.lower() and \
             #         category.filename_search.lower() in process_type.filepath.lower():
@@ -156,6 +157,22 @@ class DBConnection():
         return_data = self.get_process_categories()
         return return_data
 
+association_table = Table('association',Base.metadata,
+    Column('process_type_id',Integer,ForeignKey("process_type.id")),
+    Column('process_category_id',Integer,ForeignKey("process_category.id"))
+)
+
+class ProcessType(Base):
+    __tablename__ = 'process_type'
+    id = Column(Integer, primary_key=True)
+    filepath = Column(String(250), nullable=False)
+    title = Column(String(250,convert_unicode=True), nullable=False)
+    # process_category_id = Column(Integer, ForeignKey(ProcessCategory.id),default=0)
+    # process_category = relationship(ProcessCategory)
+    process_categories = relationship("ProcessCategory",secondary=association_table)
+    def __repr__(self):
+        return "<ProcessType('%s')>" % self.filepath
+
 class ProcessCategory(Base):
     __tablename__ = 'process_category'
     id = Column(Integer, primary_key=True)
@@ -163,18 +180,9 @@ class ProcessCategory(Base):
     title_search = Column(String(250), default='')
     filename_search = Column(String(250), default='')
     order = Column(Integer,default=0)
+    # process_type_id = Column(Integer,ForeignKey('process_type.id'))
     def __repr__(self):
         return "<ProcessCategory('%s')>" % self.title
-
-class ProcessType(Base):
-    __tablename__ = 'process_type'
-    id = Column(Integer, primary_key=True)
-    filepath = Column(String(250), nullable=False)
-    title = Column(String(250,convert_unicode=True), nullable=False)
-    process_category_id = Column(Integer, ForeignKey(ProcessCategory.id),default=0)
-    process_category = relationship(ProcessCategory)
-    def __repr__(self):
-        return "<ProcessType('%s')>" % self.filepath
 
 
 class DBProcess(Base):
@@ -214,6 +222,9 @@ class Screenshot(Base):
     file_path = Column(String(250), nullable=False)
     time_taken = Column(DateTime, nullable=False)
 
+
+expandTypes = [ProcessType,ProcessCategory]
+
 def row2dict(row):
     if (type(row)is KeyedTuple):
         d = {}
@@ -225,13 +236,18 @@ def row2dict(row):
                     d[column.name] = str(getattr(subrow, column.name))
                 else:
                     d[subrow.__tablename__][column.name] = str(getattr(subrow, column.name))
+            if type(subrow) is ProcessType:
+                d['process_categories'] = []
+                for pc in subrow.process_categories:
+                    d['process_categories'].append(row2dict(pc))
             firstrow = False
         return d
     else:
         d = {}
-        for column in row.__table__.columns:
+        columns = row.__table__.columns
+        for column in columns:
+            value = getattr(row, column.name)
             d[column.name] = str(getattr(row, column.name))
-
         return d
 
 

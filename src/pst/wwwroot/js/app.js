@@ -41,8 +41,12 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                  var svg = d3.select(element[0])
                     .append('svg')
                     .style('width', '100%');
-                 var maxy = 0;
+                 var maxy = -1;
                  svg.attr('height', "0px");
+
+                 var starttime = new Date().getTime();
+                 var endtime = new Date().getTime();
+                 var color = d3.scale.category20();
 
                  // Browser onresize event
                 window.onresize = function () {
@@ -53,7 +57,38 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                   return scope.renderProcesses(newVals);
                 }, true);
 
+                drawProcess = function(data,category) {
 
+                    svg.append('rect')
+                        .attr('height', barHeight)
+//                        .attr('width', 140)
+                        .attr('x', function(){
+                            var start = new Date(data.start_time).getTime();
+                            return xScale(start - starttime)
+                        })
+                        .attr('y', function () {
+//                            return 0;
+                            var yval = category.id * (barHeight + barPadding);
+                            if (yval > maxy) {
+                                maxy = yval;
+                                svg.attr('height', yval+barHeight);
+                            }
+                            return category.id * (barHeight + barPadding);
+
+                        })
+                        .on('mouseover',function() {
+                            return scope.onClick({item: data});
+                        })
+                        .attr('fill', function () {
+                            return color(category.id);
+                        })
+                        .attr('width', function () {
+
+                            var start = new Date(data.start_time).getTime();
+                            var end = new Date(data.end_time).getTime();
+                            return  xScale(end - start);
+                        });
+                }
 
                 scope.renderProcesses = function(data) {
 //                    console.log(data);
@@ -66,14 +101,11 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                     first = data[0]
                     last = data[data.length-1]
                     console.log(first);
-                    var starttime = new Date(first.start_time).getTime();
-                    var endtime = new Date(last.end_time).getTime();
+                    starttime = new Date(first.start_time).getTime();
+                    endtime = new Date(last.end_time).getTime();
                     console.log(starttime);
                     console.log(endtime);
-
-
                     var width = d3.select(element[0]).node().offsetWidth - margin,
-
                     color = d3.scale.category20();
 
 //                    xScale = d3.scale.linear()
@@ -90,73 +122,43 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                         .domain([0,endtime-starttime])
                         .range([0,width])
 
-
-                    var lasttime = 0;
-                    svg.selectAll('rect')
-                        .data(data).enter()
-                        .append('rect')
-                        .attr('height', barHeight)
-//                        .attr('width', 140)
-                        .attr('x', function(d,i){
-//                            return xScale(lasttime);
-                            var start = new Date(d.start_time).getTime();
-                            return xScale(start - starttime)
-
-//                            if (i != 0) {
-//                                var lastD = data[i-1];
-//                                var lasttime = new Date(lastD.start_time).getTime()
-//                                return  xScale(lasttime - starttime);
-//                            } else {
-//                                return 0;
-//                            }
-                        })
-//                        .attr('x',xScale(lasttime))
-                        .attr('y', function (d, i) {
-//                            return 0;
-                            var yval = d.process_category.id * (barHeight + barPadding);
-                            if (yval > maxy) {
-                                maxy = yval;
-                                svg.attr('height', yval+barHeight);
-                            }
-                            return d.process_category.id * (barHeight + barPadding);
-
-                        })
-                        .on('mouseover',function(d,i) {
-                            //console.log(d);
-                            //scope.test();
-//                            scope.test();
-                            return scope.onClick({item: d});
-
-                        })
-                        .attr('fill', function (d) {
-                            return color(d.process_category.id);
-                        })
-//                        .transition()
-//                        .duration(1000)
-                        .attr('width', function (d,i) {
-
-                            var start = new Date(d.start_time).getTime();
-                            var end = new Date(d.end_time).getTime();
-                            return  xScale(end - start);
-
-//                            if (i != 0) {
-//                                var lastD = data[i-1];
-//                                var lasttime = new Date(lastD.start_time).getTime()
-//
-//                                return  xScale(timediff - lasttime);
-//                            } else {
-//                                return xScale(timediff);
-//                            }
-
-//                            lasttime = new Date(d.datetime).getTime();
-
-                            lasttime = timediff
-//                            console.log(xScale(lasttime))
-//                            return 100;
-
+                    angular.forEach(data,function(process,key){
+                        angular.forEach(process.process_categories,function(pcat,key){
+                            drawProcess(process,pcat)
                         });
+                    });
+//                    svg.selectAll('rect')
+//                        .data(data).enter()
+//                        .append('rect')
+//                        .attr('height', barHeight)
+////                        .attr('width', 140)
+//                        .attr('x', function(d,i){
+//                            var start = new Date(d.start_time).getTime();
+//                            return xScale(start - starttime)
+//                        })
+//                        .attr('y', function (d, i) {
+////                            return 0;
+//                            var yval = d.process_category.id * (barHeight + barPadding);
+//                            if (yval > maxy) {
+//                                maxy = yval;
+//                                svg.attr('height', yval+barHeight);
+//                            }
+//                            return d.process_category.id * (barHeight + barPadding);
+//
+//                        })
+//                        .on('mouseover',function(d,i) {
+//                            return scope.onClick({item: d});
+//                        })
+//                        .attr('fill', function (d) {
+//                            return color(d.process_category.id);
+//                        })
+//                        .attr('width', function (d,i) {
+//
+//                            var start = new Date(d.start_time).getTime();
+//                            var end = new Date(d.end_time).getTime();
+//                            return  xScale(end - start);
+//                        });
 
-                    console.log(xScale(lasttime));
 
                 }
              });

@@ -166,7 +166,7 @@ class TestDataBase(unittest.TestCase):
             db.assign_categories()
             # processes = db.get_processes()
             processes = [pst.db.row2dict(row) for row in db.get_processes()]
-            self.assertEqual(new_category.id,int(processes[x]['process_category']['id']))
+            self.assertEqual(new_category.id,int(processes[x]['process_categories'][1]['id']))
         db.session.close()
         rm(testdb)
 
@@ -294,7 +294,7 @@ class TestWebService(BaseCherryPyTestCase):
 
         process_responce = self.webapp_request('/data/processes',id=process.id)
         process_jsonobj = json.loads('\n\r'.join(process_responce.body))
-        self.assertEqual(new_cat['id'],process_jsonobj[0]['process_category']['id'])
+        self.assertEqual(new_cat['id'],process_jsonobj[0]['process_categories'][1]['id'])
 
     def test_delete_process_category(self):
         test_title = random_string(10)
