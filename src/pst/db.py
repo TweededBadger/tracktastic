@@ -111,7 +111,7 @@ class DBConnection():
             .join(ProcessType)\
             .filter(and_(DBProcess.start_time <=end_time,DBProcess.start_time>=start_time))\
             .order_by(DBProcess.start_time.asc())\
-            .limit(100)
+            # .limit(100)
         # data = self.session.query(DBProcess,ProcessType).join(ProcessType).limit(10)
         # data = self.session.query(ProcessCategory).join(ProcessType).join(DBProcess)
         # data = self.session.query(DBProcess,ProcessType)#.join(ProcessType)#.join(ProcessCategory)

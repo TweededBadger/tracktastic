@@ -31,7 +31,10 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
          scope: {
              data:'=',
              onClick:'&',
-             test:'&'
+             test:'&',
+             redraw:'=',
+             startTime:'=',
+             endTime:'='
          },
          link: function (scope, element, attrs) {
              d3Service.d3().then(function (d3) {
@@ -44,27 +47,32 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                  var maxy = -1;
                  svg.attr('height', "0px");
 
-                 var starttime = new Date().getTime();
-                 var endtime = new Date().getTime();
+                 var starttime = scope.startTime;
+                 var endtime = scope.endTime;
+//                 var starttime = new Date().getTime();
+//                 var endtime = new Date().getTime();
                  var color = d3.scale.category20();
 
                  // Browser onresize event
                 window.onresize = function () {
                     scope.$apply();
                 };
-                 scope.$watch('data', function(newVals, oldVals) {
-                   console.log("NEW PROCESSES");
-                  return scope.renderProcesses(newVals);
+                 scope.$watch('redraw', function(newVals, oldVals) {
+                        console.log("redraw "+scope.redraw);
+                     if (scope.redraw) {
+                         console.log("do redraw");
+                         scope.redraw = false;
+                         return scope.renderProcesses(scope.data);
+                     }
                 }, true);
 
                 drawProcess = function(data,category) {
-
                     svg.append('rect')
                         .attr('height', barHeight)
 //                        .attr('width', 140)
                         .attr('x', function(){
                             var start = new Date(data.start_time).getTime();
-                            return xScale(start - starttime)
+                            return xScale(start)
                         })
                         .attr('y', function () {
 //                            return 0;
@@ -83,10 +91,14 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                             return color(category.id);
                         })
                         .attr('width', function () {
-
                             var start = new Date(data.start_time).getTime();
                             var end = new Date(data.end_time).getTime();
-                            return  xScale(end - start);
+//                            return  xScale(end - start);
+                            var duration = end-start;
+                            console.log(duration)
+                            console.log(xScale(duration + starttime.getTime()))
+                            return  xScale(duration + starttime.getTime())
+//                            return 1;
                         });
                 }
 
@@ -95,16 +107,15 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
 
                     svg.selectAll('*').remove();
 
+                    starttime = scope.startTime;
+                    endtime = scope.endTime;
+
                     // If we don't pass any data, return out of the element
                     if (!data) return;
-
                     first = data[0]
                     last = data[data.length-1]
-                    console.log(first);
-                    starttime = new Date(first.start_time).getTime();
-                    endtime = new Date(last.end_time).getTime();
-                    console.log(starttime);
-                    console.log(endtime);
+//                    starttime = new Date(first.start_time).getTime();
+//                    endtime = new Date(last.end_time).getTime();
                     var width = d3.select(element[0]).node().offsetWidth - margin,
                     color = d3.scale.category20();
 
@@ -119,7 +130,7 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
 //                        ])
 //                            .range([0, width]);
                     xScale = d3.scale.linear()
-                        .domain([0,endtime-starttime])
+                        .domain([starttime.getTime(),endtime.getTime()])
                         .range([0,width])
 
                     angular.forEach(data,function(process,key){
@@ -201,8 +212,6 @@ trackApp.directive('d3Barsxx', ['d3Service', function (d3Service) {
                 });
 
                 scope.$watch('data', function(newVals, oldVals) {
-                   console.log("NEW DATA");
-                   console.log(newVals);
                   return scope.render(newVals);
                 }, true);
 

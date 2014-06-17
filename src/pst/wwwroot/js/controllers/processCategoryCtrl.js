@@ -3,7 +3,6 @@ angular.module('trackApp')
     .controller("ProcessCategoryCtrl",function($scope, $http,baseUrl) {
 
         $scope.$watchCollection('process_cats',function(oldValue,newValue){
-            console.log(newValue);
             submitNewOrder(newValue);
         });
 
@@ -14,7 +13,6 @@ angular.module('trackApp')
         }
 
         $scope.addNewCategory = function(newCat) {
-            console.log(newCat);
             $http({
                 method:'POST',
                 url:baseUrl+'/process_categories',
@@ -25,12 +23,10 @@ angular.module('trackApp')
                     assign:1
                 }
             }).success(function(data){
-                console.log(data);
                 $scope.process_cats = data;
             })
         }
         $scope.deleteCat = function(cat) {
-            console.log(cat);
             $http({
                 method:'DELETE',
                 url:baseUrl+'/process_categories',
@@ -38,17 +34,13 @@ angular.module('trackApp')
                     id:cat.id
                 }
             }).success(function(data){
-                console.log(data);
                 $scope.process_cats = data;
             })
         }
         submitNewOrder = function() {
             angular.forEach($scope.process_cats,function(value,key){
-               console.log(value);
-               console.log(key);
                value.order = key;
             });
-            console.log($scope.process_cats);
             $http({
                 method:'POST',
                 url:baseUrl+'reorder_categories',
@@ -57,8 +49,6 @@ angular.module('trackApp')
                     assign:1
                 }
             }).success(function(data){
-                console.log("------------1")
-                console.log(data);
 
             })
         }

@@ -26,16 +26,29 @@
     <div class="row" picker>
         <div class="col-xs-6">
             <p class="input-group">
-              <input type="text" class="form-control" datepicker-popup="dd-MMMM-yyyy" ng-model="dt" is-open="opened" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+              <input type="text" class="form-control" datepicker-popup="dd-MMMM-yyyy" ng-model="pickerStartTime" is-open="openedStart" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
               <span class="input-group-btn">
-                <button type="button" class="btn btn-default" ng-click="open($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+                <button type="button" class="btn btn-default" ng-click="openStart($event)"><i class="glyphicon glyphicon-calendar"></i></button>
               </span>
             </p>
+            <p class="input-group">
+                <input type="text" class="form-control" datepicker-popup="dd-MMMM-yyyy" ng-model="pickerEndTime" is-open="openedEnd" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions" date-disabled="disabled(date, mode)" ng-required="true" close-text="Close" />
+              <span class="input-group-btn">
+                <button type="button" class="btn btn-default" ng-click="openEnd($event)"><i class="glyphicon glyphicon-calendar"></i></button>
+              </span>
+            </p>
+            <p class="input-group">
+                <timepicker ng-model="pickerStartTime"  hour-step="hstep" minute-step="mstep" show-meridian="ismeridian"></timepicker>
+                <timepicker ng-model="pickerEndTime"  hour-step="hstep" minute-step="mstep" show-meridian="ismeridian"></timepicker>
+            </p>
+
         </div>
+
+
     </div>
 
     <!--<d3-barsxx data="data"></d3-barsxx>-->
-    <d3-process data="processes" test = "testfunc()" label="Label" on-click="trackClick(item)"></d3-process>
+    <d3-process data="processes" start-time="pickerStartTime" end-time="pickerEndTime" test = "testfunc()" label="Label" on-click="trackClick(item)" redraw="redraw"></d3-process>
 
     <div class="columns large-12 small-12" ng-show="showDetailPanel">
     <h3>Details</h3>

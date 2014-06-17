@@ -4,11 +4,6 @@ tracktastic.controller('TracktasticCtrl',
     ['$scope', '$http',
         function ($scope, $http) {
 
-            $scope.testfunc = function (data) {
-                console.log(data);
-                console.log("This test says hello");
-            }
-
             $scope.trackClick = function (item) {
 //                console.log(item);
                 $scope.$apply(function () {
@@ -23,10 +18,14 @@ tracktastic.controller('TracktasticCtrl',
 //                $scope.processes = data;
 //            })
 
-            $scope.$watch('dt',function(oldValue,newValue){
-                console.log("Date Picked: "+newValue);
+            $scope.$watch('pickerStartTime',function(oldValue,newValue){
                 if (angular.isDefined($scope.dt)) {
-                    processSearch($scope.dt);
+                    processSearch($scope.pickerStartTime,$scope.pickerEndTime);
+                }
+            });
+            $scope.$watch('pickerEndTime',function(oldValue,newValue){
+                if (angular.isDefined($scope.dt)) {
+                    processSearch($scope.pickerStartTime,$scope.pickerEndTime);
                 }
             });
 
@@ -37,19 +36,22 @@ tracktastic.controller('TracktasticCtrl',
                 {name: 'Q', score: 75},
                 {name: "Loser", score: 48}
             ];
+            $scope.redraw = true;
 
-            processSearch = function(start_time) {
+            processSearch = function(start_time,end_time) {
+                console.log("START TIME: " + start_time);
+                console.log("END TIME: " + end_time);
                 $http({
                     method:'GET',
                     url:'data/processes/',
                     params: {
-                        start_time:start_time.toUTCString(),
-                        end_time:start_time.addHours(24).toUTCString(),
+                        start_time:new Date(start_time.getTime()).addHours(1).toUTCString(),
+                        end_time:new Date(end_time.getTime()).addHours(1).toUTCString(),
                         test:"test"
                     }
                 }).success(function(data){
-                    console.log("------------1")
                     $scope.processes = data;
+                    $scope.redraw = true;
                 })
             }
 
