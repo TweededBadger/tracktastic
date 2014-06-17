@@ -221,13 +221,15 @@ class TestDataService(unittest.TestCase):
         rm(self.testdb)
 
 
+
+
 class TestWebService(BaseCherryPyTestCase):
 
     def setUp(self):
 
         self.testdb = str(time.time()) + ".db"
         self.db = DBConnection(db_filename=self.testdb)
-        testhelpers.add_process_and_type(self.db)
+        # testhelpers.add_process_and_type(self.db)
 
         WEB_PORT = 8076
         self.local = cherrypy.lib.httputil.Host('127.0.0.1', 50000, "")
@@ -253,8 +255,6 @@ class TestWebService(BaseCherryPyTestCase):
         test_title = random_string(10)
         test_title_search = random_string(10)
         test_filename_search = random_string(10)
-
-
         current_process = pst.processes.get_current()
         current_process.title = "TEST TITLE " + test_title_search
         current_process.filename = "TEST FILENAME " + test_filename_search
@@ -275,6 +275,35 @@ class TestWebService(BaseCherryPyTestCase):
         process_jsonobj = json.loads('\n\r'.join(process_responce.body))
         print process_jsonobj
         self.assertEqual(jsonobj['id'],process_jsonobj[0]['process_category']['id'])
+
+    def test_reorder(self):
+        new_cat_1 = self.db.add_category(title="TITLE1",title_search = "",filename_search = "")
+        new_cat_2 = self.db.add_category(title="TITLE2",title_search = "",filename_search = "")
+        cats = [pst.db.row2dict(row) for row in self.db.get_process_categories()]
+        for cat in cats:
+            if cat['title'] == "TITLE2":
+                cat['order'] = 1
+            if cat['title'] == "TITLE1":
+                cat['order'] = 2
+        test_json = json.dumps(cats, indent=4, sort_keys=True)
+        response = self.webapp_request('/data/reorder_categories',
+                                      method='POST',
+                                      data=test_json)
+
+        jsonobj = json.loads('\n\r'.join(response.body))
+        new_cat_1_amended_from_json = [x for x in jsonobj if x['title'] == "TITLE1"][0]
+        new_cat_2_amended_from_json = [x for x in jsonobj if x['title'] == "TITLE2"][0]
+        self.assertEqual(int(new_cat_1_amended_from_json['order']),2)
+        self.assertEqual(int(new_cat_2_amended_from_json['order']),1)
+
+        self.db.session.close()
+        self.db = DBConnection(db_filename=self.testdb)
+
+        cats2 = [pst.db.row2dict(row) for row in self.db.get_process_categories()]
+        new_cat_1_amended = [x for x in cats2 if x['title'] == "TITLE1"][0]
+        new_cat_2_amended = [x for x in cats2 if x['title'] == "TITLE2"][0]
+        self.assertEqual(int(new_cat_1_amended['order']),2)
+        self.assertEqual(int(new_cat_2_amended['order']),1)
 
 
 

@@ -62,10 +62,31 @@ class DataService:
             db.session.close()
             return out
 
-
         process_categories = db.get_process_categories()
         data = [pst.db.row2dict(row) for row in process_categories]
         out = json.dumps(data, indent=4, sort_keys=True)
         db.session.close()
         return out
+
+    @cherrypy.expose
+    def reorder_categories(self, *args, **kwargs):
+        db = DBConnection(self.dbname)
+        if 'POST' in cherrypy.request.method:
+            jsondata = cherrypy.request.params.get("data")
+            try:
+                data = json.loads(jsondata)
+            except:
+                data = [json.loads(row) for row in jsondata]
+            edited_data = db.edit_categories(data)
+            edited_data_dict =[pst.db.row2dict(row) for row in edited_data]
+            out = json.dumps(edited_data_dict, indent=4, sort_keys=True)
+            db.session.close()
+            return out
+        db.session.close()
+
+
+
+
+
+
 

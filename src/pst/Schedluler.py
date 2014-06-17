@@ -44,16 +44,16 @@ class Scheduler:
 
             if currentTime - self.lastRun > self.cycleTime:
                 self.lastRun = currentTime
-                try:
-                    if not self.silent:
-                        # logger.log(u"Starting new thread: "+self.threadName, logger.DEBUG)
-                        print(u"Starting new thread: "+self.threadName)
-                        pass
-                    self.action.run()
-                except Exception, e:
-                    print(u"Exception generated in thread "+self.threadName+": ")# + ex(e))
-                    print(repr(traceback.format_exc()))
+                # try:
+                if not self.silent:
+                    # logger.log(u"Starting new thread: "+self.threadName, logger.DEBUG)
+                    # print(u"Starting new thread: "+self.threadName)
                     pass
+                self.action.run()
+                # except Exception, e:
+                #     print(u"Exception generated in thread "+self.threadName+": ")# + ex(e))
+                #     print(repr(traceback.format_exc()))
+                #     pass
 
             if self.abort:
                 self.abort = False

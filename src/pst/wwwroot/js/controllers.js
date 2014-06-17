@@ -39,7 +39,6 @@ tracktastic.controller('TracktasticCtrl',
             ];
 
             processSearch = function(start_time) {
-
                 $http({
                     method:'GET',
                     url:'data/processes/',

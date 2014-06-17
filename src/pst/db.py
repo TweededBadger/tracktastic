@@ -105,7 +105,8 @@ class DBConnection():
         return data
 
     def get_process_categories(self):
-        data = self.session.query(ProcessCategory)
+        data = self.session.query(ProcessCategory)\
+            .order_by(ProcessCategory.order)#
         return data
 
     def create_default_process_category(self):
@@ -133,6 +134,13 @@ class DBConnection():
         self.session.commit()
 
 
+    def edit_categories(self,new_data):
+        for cat in new_data:
+            cat_row = self.session.query(ProcessCategory).filter(ProcessCategory.id == int(cat['id'])).one()
+            cat_row.order = int(cat['order'])
+        self.session.commit()
+        return_data = self.get_process_categories()
+        return return_data
 
 class ProcessCategory(Base):
     __tablename__ = 'process_category'
