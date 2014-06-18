@@ -47,7 +47,7 @@ tracktastic.controller('TracktasticCtrl',
                     params: {
                         start_time:new Date(start_time.getTime()).addHours(1).toUTCString(),
                         end_time:new Date(end_time.getTime()).addHours(1).toUTCString(),
-                        test:"test"
+                        random:Math.random()
                     }
                 }).success(function(data){
                     $scope.processes = data;

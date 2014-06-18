@@ -12,7 +12,7 @@ angular.module('trackApp')
 
             scope.pickerStartTime = new Date();
             scope.pickerStartTime.setUTCHours(0);
-            scope.pickerStartTime.setHours(0)
+            scope.pickerStartTime.setHours(9)
             scope.pickerStartTime.setMinutes(0)
             scope.pickerStartTime.setSeconds(0);
 
@@ -23,7 +23,7 @@ angular.module('trackApp')
             scope.pickerEndTime.setMinutes(59);
 
             scope.hstep = 1;
-            scope.mstep = 10;
+            scope.mstep = 1;
             scope.ismeridian = false;
 
             scope.openStart = function ($event) {

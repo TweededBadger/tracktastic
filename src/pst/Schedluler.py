@@ -14,13 +14,10 @@ class Scheduler:
 
         self.action = action
         self.cycleTime = cycleTime
-
         self.thread = None
         self.threadName = threadName
         self.silent = silent
-
         self.initThread()
-
         self.abort = False
 
     def initThread(self):
@@ -39,20 +36,18 @@ class Scheduler:
     def runAction(self):
 
         while True:
-
             currentTime = datetime.datetime.now()
-
             if currentTime - self.lastRun > self.cycleTime:
                 self.lastRun = currentTime
-                # try:
-                if not self.silent:
-                    # logger.log(u"Starting new thread: "+self.threadName, logger.DEBUG)
-                    # print(u"Starting new thread: "+self.threadName)
-                    pass
-                self.action.run()
-                # except Exception, e:
-                #     print(u"Exception generated in thread "+self.threadName+": ")# + ex(e))
-                #     print(repr(traceback.format_exc()))
+                try:
+                    if not self.silent:
+                        # logger.log(u"Starting new thread: "+self.threadName, logger.DEBUG)
+                        print(u"Starting new thread: "+self.threadName)
+                        pass
+                    self.action.run()
+                except Exception, e:
+                    print(u"Exception generated in thread "+self.threadName+": ")# + ex(e))
+                    print(repr(traceback.format_exc()))
                 #     pass
 
             if self.abort:

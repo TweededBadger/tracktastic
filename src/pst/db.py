@@ -145,6 +145,11 @@ class DBConnection():
             #         category.filename_search.lower() in process_type.filepath.lower():
             #         process_type.process_category = category
 
+        process_types = self.session.query(ProcessType)
+        unassigned_cat = self.session.query(ProcessCategory).filter(ProcessCategory.id == 0).one()
+        for type in process_types:
+            if (len(type.process_categories) > 1):
+                type.process_categories.remove(unassigned_cat)
 
         self.session.commit()
 
