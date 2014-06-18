@@ -1,4 +1,3 @@
-import win32gui
 
 class Process(object):
     def __init__(self, process_id,title,filename):

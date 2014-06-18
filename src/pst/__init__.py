@@ -16,9 +16,9 @@ config = ConfigObj("config.ini")
 class Main():
     def __init__(self):
         self.db = DBConnection()
-        self.schedule_camera = Scheduler(ScreenshotLoop(db=self.db),
-                                         cycleTime=datetime.timedelta(seconds=10),threadName="CameraThread")
-        self.schedule_camera.thread.start()
+        # self.schedule_camera = Scheduler(ScreenshotLoop(db=self.db),
+        #                                  cycleTime=datetime.timedelta(seconds=10),threadName="CameraThread")
+        # self.schedule_camera.thread.start()
         self.process_loop = Scheduler(ProccessLoop(db=self.db), cycleTime=datetime.timedelta(seconds=10),threadName="ProcessThread")
         self.process_loop.thread.start()
 
@@ -30,7 +30,11 @@ class Main():
         except:
             WEB_PORT = 8081
 
-        SCREENSHOT_FOLDER = config['screenshot_folder']
+        try:
+            SCREENSHOT_FOLDER = config['screenshot_folder']
+        except:
+            SCREENSHOT_FOLDER = "screenshots/"
+
 
         self.server = WebServer({
             'port':WEB_PORT,

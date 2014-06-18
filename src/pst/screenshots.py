@@ -1,4 +1,7 @@
-import wx
+try:
+    import wx
+except:
+    pass
 
 class Camera(object):
     def __init__(self,save_path = ""):

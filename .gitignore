@@ -1,10 +1,12 @@
 env/
 src/.idea/
+.idea/
 *.exe
 *.png
 *.jpg
 src/testbed.py
 *.db
+*.db-journal
 src/config.ini
 *.pyc
 *.log
