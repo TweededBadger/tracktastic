@@ -1,8 +1,8 @@
 var tracktastic = angular.module('tracktastic', []);
 
 tracktastic.controller('TracktasticCtrl',
-    ['$scope', '$http',
-        function ($scope, $http) {
+    ['$scope', '$http','$cookieStore',
+        function ($scope, $http,$cookieStore) {
 
             $scope.trackClick = function (item) {
 //                console.log(item);
@@ -19,14 +19,12 @@ tracktastic.controller('TracktasticCtrl',
 //            })
 
             $scope.$watch('pickerStartTime',function(oldValue,newValue){
-                if (angular.isDefined($scope.dt)) {
+                    $cookieStore.put('startdate',$scope.pickerStartTime);
                     processSearch($scope.pickerStartTime,$scope.pickerEndTime);
-                }
             });
             $scope.$watch('pickerEndTime',function(oldValue,newValue){
-                if (angular.isDefined($scope.dt)) {
+                    $cookieStore.put('enddate',$scope.pickerEndTime);
                     processSearch($scope.pickerStartTime,$scope.pickerEndTime);
-                }
             });
 
             $scope.greeting = "Blah Blah Blah";
@@ -37,10 +35,12 @@ tracktastic.controller('TracktasticCtrl',
                 {name: "Loser", score: 48}
             ];
             $scope.redraw = true;
+            $scope.viewableCategories = []
 
             processSearch = function(start_time,end_time) {
-                console.log("START TIME: " + start_time);
-                console.log("END TIME: " + end_time);
+                if (angular.isUndefined(start_time) || angular.isUndefined(end_time)) return false;
+                start_time_new = new Date(start_time.getTime()).addHours(1).toUTCString();
+                end_time_new = new Date(start_time.getTime()).addHours(1).toUTCString();
                 $http({
                     method:'GET',
                     url:'data/processes/',

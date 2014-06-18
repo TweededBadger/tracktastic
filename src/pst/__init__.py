@@ -61,6 +61,7 @@ class ProcessLoop():
             added_process = self.db.add_process(current_process)
         else:
             self.db.set_current_process_inactive()
+        pass
 
 
 def main():

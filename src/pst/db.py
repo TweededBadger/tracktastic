@@ -54,9 +54,7 @@ class DBConnection():
 
                 return self.current_process
         except Exception, e:
-            # print(repr(traceback.format_exc()))
             pass
-        # print ("Adding Process")
         try:
             self.current_process.end_time = now
         except:
@@ -64,7 +62,6 @@ class DBConnection():
         self.session.add(processtoadd)
         self.session.commit()
         self.current_process = processtoadd
-        # print ("Added Process")
         return processtoadd
 
     def set_current_process_inactive(self):
@@ -90,6 +87,14 @@ class DBConnection():
         self.session.commit()
         return new_cat
     def delete_category(self,id):
+        category = self.session.query(ProcessCategory)\
+            .filter(ProcessCategory.id == id).one()
+
+        for type in category.types:
+            type.process_categories.remove(category)
+        self.session.query(ProcessFilter)\
+            .filter(ProcessFilter.process_category_id == id)\
+            .delete()
         self.session.query(ProcessCategory)\
             .filter(ProcessCategory.id == id)\
             .delete()
@@ -105,6 +110,11 @@ class DBConnection():
         self.session.add(new_filter)
         self.session.commit()
         return new_filter
+    def delete_filter(self,filter_id):
+        self.session.query(ProcessFilter)\
+            .filter(ProcessFilter.id == filter_id)\
+            .delete()
+        self.session.commit()
 
     def get_screenshots(self):
         data = self.session.query(Screenshot).limit(100)
@@ -129,13 +139,13 @@ class DBConnection():
         return data
 
     def get_process_categories(self):
-        data = self.session.query(ProcessCategory,ProcessFilter)\
-            .join(ProcessFilter)\
-            .order_by(ProcessCategory.order)#
+        data = self.session.query(ProcessCategory)\
+            .order_by(ProcessCategory.order)
         return data
 
-    def get_category_filters(self):
-        data = self.session.query(ProcessFilter)
+    def get_category_filters(self,category_id):
+        data = self.session.query(ProcessFilter)\
+            .filter(ProcessFilter.process_category_id == category_id)
         return data
 
     def create_default_process_category(self):
@@ -145,6 +155,11 @@ class DBConnection():
         self.session.commit()
 
     def assign_categories(self):
+
+        association_table_data = self.session.execute(association_table.delete())
+        # association_table_data.delete()
+        self.session.commit()
+
         categories = self.session.query(ProcessCategory)
         # process_types = self.session.query(ProcessType)
         for category in categories:
@@ -196,7 +211,7 @@ class ProcessType(Base):
     title = Column(String(250,convert_unicode=True), nullable=False)
     # process_category_id = Column(Integer, ForeignKey(ProcessCategory.id),default=0)
     # process_category = relationship(ProcessCategory)
-    process_categories = relationship("ProcessCategory",secondary=association_table)
+    process_categories = relationship("ProcessCategory",secondary=association_table,backref="types")
     def __repr__(self):
         return "<ProcessType('%s')>" % self.filepath
 

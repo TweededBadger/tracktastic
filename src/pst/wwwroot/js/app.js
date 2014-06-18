@@ -1,6 +1,7 @@
 $window = $(window);
 var trackApp = angular.module('trackApp', [
     'ngRoute',
+    'ngCookies',
     'tracktastic',
     'd3',
     'ui.bootstrap',
@@ -34,7 +35,8 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
              test:'&',
              redraw:'=',
              startTime:'=',
-             endTime:'='
+             endTime:'=',
+             viewableCategories:'='
          },
          link: function (scope, element, attrs) {
              d3Service.d3().then(function (d3) {
@@ -46,27 +48,27 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                     .style('width', '100%');
                  var maxy = -1;
                  svg.attr('height', "0px");
-
                  var starttime = scope.startTime;
                  var endtime = scope.endTime;
 //                 var starttime = new Date().getTime();
 //                 var endtime = new Date().getTime();
                  var color = d3.scale.category20();
-
+                 scope.viewableCategories = [];
                  // Browser onresize event
                 window.onresize = function () {
                     scope.$apply();
                 };
                  scope.$watch('redraw', function(newVals, oldVals) {
-                        console.log("redraw "+scope.redraw);
                      if (scope.redraw) {
-                         console.log("do redraw");
                          scope.redraw = false;
                          return scope.renderProcesses(scope.data);
                      }
                 }, true);
 
                 drawProcess = function(data,category) {
+
+                    pos = scope.viewableCategories.map(function(e) { return e.id; }).indexOf(category.id);
+
                     svg.append('rect')
                         .attr('height', barHeight)
 //                        .attr('width', 140)
@@ -76,13 +78,7 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                         })
                         .attr('y', function () {
 //                            return 0;
-                            var yval = category.id * (barHeight + barPadding);
-                            if (yval > maxy) {
-                                maxy = yval;
-                                svg.attr('height', yval+barHeight);
-                            }
-                            return category.id * (barHeight + barPadding);
-
+                            return (pos * (barHeight + barPadding))+barPadding;
                         })
                         .on('mouseover',function() {
                             return scope.onClick({item: data});
@@ -95,18 +91,32 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                             var end = new Date(data.end_time).getTime();
 //                            return  xScale(end - start);
                             var duration = end-start;
-                            console.log(duration)
-                            console.log(xScale(duration + starttime.getTime()))
                             return  xScale(duration + starttime.getTime())
 //                            return 1;
                         });
                 }
 
+                 drawLabels = function() {
+                     angular.forEach(scope.viewableCategories,function(cat,key){
+                        svg.append('text')
+                            .attr('x', function(){
+                                return 0;
+                            })
+                            .attr('y', function(){
+                                return ((key) * (barHeight + barPadding))+barHeight/2;
+                            })
+                            .text(cat.title)
+                            .attr("font-family", "sans-serif")
+                            .attr("font-size", "15px")
+                            .attr("font-weight", "bold")
+                            .attr("fill", color(cat.id));
+                     })
+                 }
+
                 scope.renderProcesses = function(data) {
-//                    console.log(data);
 
                     svg.selectAll('*').remove();
-
+                    scope.viewableCategories = []
                     starttime = scope.startTime;
                     endtime = scope.endTime;
 
@@ -133,11 +143,30 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                         .domain([starttime.getTime(),endtime.getTime()])
                         .range([0,width])
 
+                    
                     angular.forEach(data,function(process,key){
                         angular.forEach(process.process_categories,function(pcat,key){
+                            pos = scope.viewableCategories.map(function(e) { return e.id; }).indexOf(pcat.id);
+                            if (pos == -1 ) {
+                                pcat.totalTime = 0;
+                                var i = scope.viewableCategories.push(pcat);
+                                console.log(i);
+                            }
+                            pos = scope.viewableCategories.map(function(e) { return e.id; }).indexOf(pcat.id);
+                            cat = scope.viewableCategories[pos];
+                            var start = new Date(process.start_time).getTime();
+                            var end = new Date(process.end_time).getTime();
+                            cat.totalTime += (end-start);
                             drawProcess(process,pcat)
                         });
+
                     });
+                    console.log(scope.viewableCategories);
+
+                    svg.attr('height', scope.viewableCategories.length*(barHeight + barPadding));
+
+                    drawLabels();
+
 //                    svg.selectAll('rect')
 //                        .data(data).enter()
 //                        .append('rect')
