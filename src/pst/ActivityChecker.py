@@ -1,8 +1,15 @@
+try:
+    import win32gui
+except:
+    pass
+
+from pymouse import PyMouse
 import datetime
-import win32gui
 from pst import Scheduler
-import pyHook,pythoncom
+# import pyHook,pythoncom
 import threading,thread
+
+import helpers
 
 class ActivityChecker():
     def __init__(self, timeout = 30):
@@ -33,11 +40,19 @@ class ActivityCheckLoop():
     def __init__(self):
         self.lastPos = None
         self.last_interaction = datetime.datetime.now()
+        self.platform = helpers.get_platform()
+        self.m = PyMouse()
+
     def run(self):
-        flags, hcursor, newpos = win32gui.GetCursorInfo()
+        # if (self.platform == 'windows'):
+        #     flags, hcursor, newpos = win32gui.GetCursorInfo()
+        newpos = self.m.position()
         if newpos != self.lastPos:
             self.lastPos = newpos
             self.last_interaction = datetime.datetime.now()
+        # elif (self.platform == 'linux'):
+        #     pass
+
 
 class ActivityCheckerThread(threading.Thread):
     def run(self):

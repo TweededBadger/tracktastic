@@ -31,7 +31,12 @@ class Main():
         except:
             WEB_PORT = 8081
 
-        SCREENSHOT_FOLDER = config['screenshot_folder']
+        try:
+            SCREENSHOT_FOLDER = config['screenshot_folder']
+        except:
+            SCREENSHOT_FOLDER = "screenshot_folder/"
+
+
 
         self.server = WebServer({
             'port':WEB_PORT,

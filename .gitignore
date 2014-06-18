@@ -6,9 +6,11 @@ src/.idea/
 *.jpg
 src/testbed.py
 *.db
+*.db.1
 *.db-journal
 src/config.ini
 *.pyc
 *.log
 src/pst/wwwroot/.idea
 src/pyHook/
+*.tar.gz
