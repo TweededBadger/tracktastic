@@ -14,6 +14,7 @@ class WebServer():
         options.setdefault('db', "pst.db")
         options_dict = {
             'server.socket_port': options['port'],
+            'server.socket_host': '0.0.0.0',
             'log.screen':True
         }
         cherrypy.config.update(options_dict)

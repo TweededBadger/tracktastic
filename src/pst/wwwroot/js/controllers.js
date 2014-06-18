@@ -4,14 +4,25 @@ tracktastic.controller('TracktasticCtrl',
     ['$scope', '$http','$cookieStore',
         function ($scope, $http,$cookieStore) {
 
-            $scope.trackClick = function (item) {
+            $scope.trackClick = function (item,event) {
 //                console.log(item);
-                $scope.$apply(function () {
-//                    console.log("CLICK");
-                    if (!$scope.showDetailPanel)
-                        $scope.showDetailPanel = true;
-                    $scope.detailItem = item;
-                });
+                if (event.type == 'mouseout')
+                {
+                    $scope.$apply(function () {
+                        $scope.showDetailPanel = false;
+                    });
+                }
+                else {
+                    $scope.detailsStyle = {
+                        top: (event.pageY - 10) + "px",
+                        left: (event.pageX + 10) + "px"
+                    }
+                    $scope.$apply(function () {
+                        if (!$scope.showDetailPanel)
+                            $scope.showDetailPanel = true;
+                        $scope.detailItem = item;
+                    });
+                }
             };
 
 //            $http.get("data/processes/").success(function (data) {
@@ -26,6 +37,10 @@ tracktastic.controller('TracktasticCtrl',
                     $cookieStore.put('enddate',$scope.pickerEndTime);
                     processSearch($scope.pickerStartTime,$scope.pickerEndTime);
             });
+
+            $scope.convertDate = function(d) {
+                return new Date(d);
+            }
 
             $scope.greeting = "Blah Blah Blah";
             $scope.data = [

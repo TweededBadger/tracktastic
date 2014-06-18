@@ -20,6 +20,28 @@
     <script src="js/directives/picker.js"></script>
     <link rel="stylesheet" href="css/bootstrap.css"/>
     <link rel="stylesheet" href="css/bootstrap-theme.css"/>
+
+    <style>
+        .grid .tick {
+            stroke: lightgrey;
+            opacity: 0.7;
+        }
+        .grid path {
+            stroke-width: 0;
+        }
+        .details_panel {
+            position: absolute;
+        }
+        .process-categories .btn-group {
+            width: 100%;
+            padding: 0;
+        }
+        .process-categories .btn-group .btn-default {
+            width: 70%;
+            /*padding: 0;*/
+            text-align: left;
+        }
+    </style>
 </head>
 <body class="container">
 <div ng-controller="TracktasticCtrl">
@@ -65,33 +87,30 @@
     <d3-process bar-padding=20 data="processes"
                 start-time="pickerStartTime" end-time="pickerEndTime"
                 test="testfunc()" label="Label"
-                on-click="trackClick(item)"
+                on-click="trackClick(item,event)"
                 redraw="redraw" viewable-categories="viewableCategories"></d3-process>
 
     <div>
         <div>TOTAL: {{pickerEndTime-pickerStartTime | date:'HH:mm'}}</div>
-        <div ng-repeat="cat in viewableCategories">
-            {{cat.title}} - {{cat.totalTime | date:'HH:mm'}}
-        </div>
     </div>
-    <div class="columns large-12 small-12" ng-show="showDetailPanel">
-        <h3>Details</h3>
-        <h4 class="ng-binding">Title: {{detailItem.title}}</h4>
-        <h4 class="ng-binding">Process: {{detailItem.filename}}</h4>
-        <h4 class="ng-binding">Start: {{detailItem.start_time | date:'shortTime'}}</h4>
-        <h4 class="ng-binding">End: {{detailItem.end_time | date:'shortTime'}}</h4>
-        <h4 class="ng-binding">End: {{detailItem.end_time | date:'shortTime'}}</h4>
-        <h4 class="ng-binding">Category: {{detailItem.process_category.title}}</h4>
-        <a ng-click="showDetailPanel=false">Hide</a>
+    <div class="details_panel panel panel-info" ng-show="showDetailPanel"  ng-style="detailsStyle">
+        <div class="panel-heading">
+            <h4 class="ng-binding">{{detailItem.title}}</h4>
+        </div>
+        <div class="panel-body">
 
-
+        <p class="ng-binding">Process: {{detailItem.filename}}</p>
+        <p class="ng-binding">Start: {{convertDate(detailItem.start_time) | date:'HH:mm:ss'}}</p>
+        <p class="ng-binding">End: {{convertDate(detailItem.end_time) | date:'HH:mm:ss'}}</p>
+        </div>
     </div>
     <div ng:controller="ProcessCategoryCtrl">
         <div class="col-xs-4">
-            <div ui:sortable ng:model="process_cats">
-                <div ng:repeat="item in process_cats" class="item" style="cursor: move;">
-                    <div class="btn btn-default" ng-click="selectCat(item)">{{$index}} - {{item.title}}</div>
-                    <div class="btn btn-danger" ng-click="deleteCat(item)"><i class="glyphicon glyphicon-trash"></i>
+            <div ui:sortable ng:model="process_cats" class="process-categories">
+                <div ng:repeat="item in process_cats" class=" btn btn-group" style="cursor: move;">
+                    <div class="btn btn-default" ng-click="selectCat(item)">{{$index}} - {{item.title}}
+                    </div>
+                    <div class="btn btn-danger dropdown-toggle" ng-click="deleteCat(item)"><i class="glyphicon glyphicon-trash"></i>
                     </div>
                 </div>
             </div>

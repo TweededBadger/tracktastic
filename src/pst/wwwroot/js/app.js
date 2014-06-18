@@ -26,7 +26,7 @@ trackApp.config(['$routeProvider',
     }]);
 
 
-trackApp.directive('d3Process', ['d3Service', function (d3Service) {
+trackApp.directive('d3Process', ['d3Service','$filter', function (d3Service,$filter) {
     return {
          restrict: 'EA',
          scope: {
@@ -42,7 +42,8 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
              d3Service.d3().then(function (d3) {
                  var margin = parseInt(attrs.margin) || 20,
                     barHeight = parseInt(attrs.barHeight) || 30,
-                    barPadding = parseInt(attrs.barPadding) || 5;
+                    barPadding = parseInt(attrs.barPadding) || 5,
+                     topMargin = 30;
                  var svg = d3.select(element[0])
                     .append('svg')
                     .style('width', '100%');
@@ -54,6 +55,7 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
 //                 var endtime = new Date().getTime();
                  var color = d3.scale.category20();
                  scope.viewableCategories = [];
+                 var totalProcessTime = 0;
                  // Browser onresize event
                 window.onresize = function () {
                     scope.$apply();
@@ -78,10 +80,13 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                         })
                         .attr('y', function () {
 //                            return 0;
-                            return (pos * (barHeight + barPadding))+barPadding;
+                            return (pos * (barHeight + barPadding))+barPadding + topMargin;
                         })
                         .on('mouseover',function() {
-                            return scope.onClick({item: data});
+                            return scope.onClick({item: data, event:event});
+                        })
+                        .on('mouseout',function() {
+                            return scope.onClick({item: data, event:event});
                         })
                         .attr('fill', function () {
                             return color(category.id);
@@ -103,9 +108,9 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                                 return 0;
                             })
                             .attr('y', function(){
-                                return ((key) * (barHeight + barPadding))+barHeight/2;
+                                return ((key) * (barHeight + barPadding))+barHeight/2 + topMargin;
                             })
-                            .text(cat.title)
+                            .text(cat.title + " - " + $filter('date')(cat.totalTime,'HH:mm') + " - " +  $filter('number')((cat.totalTime/(endtime-starttime))*100,1) + "%")
                             .attr("font-family", "sans-serif")
                             .attr("font-size", "15px")
                             .attr("font-weight", "bold")
@@ -139,11 +144,31 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
 //
 //                        ])
 //                            .range([0, width]);
-                    xScale = d3.scale.linear()
-                        .domain([starttime.getTime(),endtime.getTime()])
+                    xScale = d3.time.scale()
+                        .domain([starttime,endtime])
                         .range([0,width])
 
-                    
+                    var xAxis = d3.svg.axis()
+                        .scale(xScale)
+                        .ticks(d3.time.hours)
+                        .tickSize(1)
+//                        .innerTickSize(1)
+                        .orient("top");
+                    height = 500;
+                    var gx = svg.append("g")
+                        .attr("class", "x axis")
+                        .attr("transform", "translate(0,20)")
+                        .call(xAxis);
+
+                    svg.append("g")
+                        .attr("class", "grid")
+                        .attr("transform", "translate(0,20)")
+                        .call(d3.svg.axis()
+                            .scale(xScale)
+                            .ticks(d3.time.hours)
+                            .tickSize(height, 0, 0)
+                            .tickFormat("")
+                    )
                     angular.forEach(data,function(process,key){
                         angular.forEach(process.process_categories,function(pcat,key){
                             pos = scope.viewableCategories.map(function(e) { return e.id; }).indexOf(pcat.id);
@@ -159,11 +184,10 @@ trackApp.directive('d3Process', ['d3Service', function (d3Service) {
                             cat.totalTime += (end-start);
                             drawProcess(process,pcat)
                         });
-
                     });
                     console.log(scope.viewableCategories);
 
-                    svg.attr('height', scope.viewableCategories.length*(barHeight + barPadding));
+                    svg.attr('height', scope.viewableCategories.length*(barHeight + barPadding) + topMargin);
 
                     drawLabels();
 
