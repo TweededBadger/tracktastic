@@ -84,10 +84,8 @@ class DBConnection():
         self.session.commit()
         return screenshot_to_add
 
-    def add_category(self,title,title_search,filename_search):
-        new_cat = ProcessCategory(title=title,
-                                  title_search=title_search,
-                                  filename_search=filename_search)
+    def add_category(self,title):
+        new_cat = ProcessCategory(title=title)
         self.session.add(new_cat)
         self.session.commit()
         return new_cat
@@ -96,6 +94,17 @@ class DBConnection():
             .filter(ProcessCategory.id == id)\
             .delete()
         self.session.commit()
+
+    def add_filter(self,category_id,title_search='',filename_search=''):
+        category =  self.session.query(ProcessCategory)\
+            .filter(ProcessCategory.id == category_id)\
+            .one()
+        new_filter = ProcessFilter(title_search=title_search,
+                                     filename_search=filename_search,
+                                     process_category=category)
+        self.session.add(new_filter)
+        self.session.commit()
+        return new_filter
 
     def get_screenshots(self):
         data = self.session.query(Screenshot).limit(100)
@@ -120,12 +129,18 @@ class DBConnection():
         return data
 
     def get_process_categories(self):
-        data = self.session.query(ProcessCategory)\
+        data = self.session.query(ProcessCategory,ProcessFilter)\
+            .join(ProcessFilter)\
             .order_by(ProcessCategory.order)#
+        return data
+
+    def get_category_filters(self):
+        data = self.session.query(ProcessFilter)
         return data
 
     def create_default_process_category(self):
         process_category = ProcessCategory(id=0,title="unassigned")
+        process_filter = ProcessFilter(id=0,process_category=process_category)
         self.session.add(process_category)
         self.session.commit()
 
@@ -133,17 +148,21 @@ class DBConnection():
         categories = self.session.query(ProcessCategory)
         # process_types = self.session.query(ProcessType)
         for category in categories:
-            matched = self.session.query(ProcessType)\
-                .filter(ProcessType.title.like("%{0}%".format(category.title_search)),
-                        ProcessType.filepath.like("%{0}%".format(category.filename_search)))
+            for filter in category.process_filter:
+                # matched = self.session.query(ProcessType)\
+                #     .filter(ProcessType.title.like("%{0}%".format(category.title_search)),
+                #             ProcessType.filepath.like("%{0}%".format(category.filename_search)))
+                matched = self.session.query(ProcessType)\
+                    .filter(ProcessType.title.like("%{0}%".format(filter.title_search)),
+                            ProcessType.filepath.like("%{0}%".format(filter.filename_search)))
 
-            for match in matched:
-                # match.process_category = category
-                match.process_categories.append(category)
-            # for process_type in process_types:
-            #     if category.title_search.lower() in process_type.title.lower() and \
-            #         category.filename_search.lower() in process_type.filepath.lower():
-            #         process_type.process_category = category
+                for match in matched:
+                    # match.process_category = category
+                    match.process_categories.append(category)
+                # for process_type in process_types:
+                #     if category.title_search.lower() in process_type.title.lower() and \
+                #         category.filename_search.lower() in process_type.filepath.lower():
+                #         process_type.process_category = category
 
         process_types = self.session.query(ProcessType)
         unassigned_cat = self.session.query(ProcessCategory).filter(ProcessCategory.id == 0).one()
@@ -161,6 +180,9 @@ class DBConnection():
         self.session.commit()
         return_data = self.get_process_categories()
         return return_data
+
+
+
 
 association_table = Table('association',Base.metadata,
     Column('process_type_id',Integer,ForeignKey("process_type.id")),
@@ -182,12 +204,18 @@ class ProcessCategory(Base):
     __tablename__ = 'process_category'
     id = Column(Integer, primary_key=True)
     title = Column(String(250), nullable=False)
-    title_search = Column(String(250), default='')
-    filename_search = Column(String(250), default='')
     order = Column(Integer,default=0)
     # process_type_id = Column(Integer,ForeignKey('process_type.id'))
     def __repr__(self):
         return "<ProcessCategory('%s')>" % self.title
+
+class ProcessFilter(Base):
+    __tablename__ = 'process_filter'
+    id = Column(Integer, primary_key=True)
+    filename_search = Column(String(250), default='')
+    title_search = Column(String(250), default='')
+    process_category_id = Column(Integer,ForeignKey('process_category.id'))
+    process_category = relationship(ProcessCategory,backref='process_filter')
 
 
 class DBProcess(Base):
@@ -245,7 +273,31 @@ def row2dict(row):
                 d['process_categories'] = []
                 for pc in subrow.process_categories:
                     d['process_categories'].append(row2dict(pc))
+            if type(subrow) is ProcessCategory:
+                d['filters'] = []
+                for f in subrow.process_filter:
+                    d['filters'].append(row2dict(f))
             firstrow = False
+        return d
+    elif type(row) is ProcessType:
+        d = {}
+        columns = row.__table__.columns
+        for column in columns:
+            value = getattr(row, column.name)
+            d[column.name] = str(getattr(row, column.name))
+        d['process_categories'] = []
+        for pc in row.process_categories:
+            d['process_categories'].append(row2dict(pc))
+        return d
+    elif type(row) is ProcessCategory:
+        d = {}
+        columns = row.__table__.columns
+        for column in columns:
+            value = getattr(row, column.name)
+            d[column.name] = str(getattr(row, column.name))
+        d['filters'] = []
+        for f in row.process_filter:
+            d['filters'].append(row2dict(f))
         return d
     else:
         d = {}

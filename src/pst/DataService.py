@@ -55,7 +55,10 @@ class DataService:
                 assign = cherrypy.request.params.get("assign")
             except:
                 assign = False
-            new_cat = db.add_category(title,title_search,filename_search)
+            new_cat = db.add_category(title)
+            new_filer = db.add_filter(title_search=title_search,
+                                      filename_search=filename_search,
+                                      category_id=new_cat.id)
             if assign:
                 db.assign_categories()
             # out = json.dumps(pst.db.row2dict(new_cat), indent=4, sort_keys=True)
@@ -73,6 +76,28 @@ class DataService:
 
         process_categories = db.get_process_categories()
         data = [pst.db.row2dict(row) for row in process_categories]
+        out = json.dumps(data, indent=4, sort_keys=True)
+        db.session.close()
+        return out
+
+    @cherrypy.expose
+    def category_filters(self, *args, **kwargs):
+        db = DBConnection(self.dbname)
+        if 'POST' in cherrypy.request.method:
+            title_search = cherrypy.request.params.get("title_search")
+            filename_search = cherrypy.request.params.get("filename_search")
+            category_id = cherrypy.request.params.get("category_id")
+            try:
+                assign = cherrypy.request.params.get("assign")
+            except:
+                assign = False
+            new_filter = db.add_filter(title_search=title_search,
+                                      filename_search=filename_search,
+                                      category_id=category_id)
+            if assign:
+                db.assign_categories()
+        filters = db.get_category_filters()
+        data = [pst.db.row2dict(row) for row in filters]
         out = json.dumps(data, indent=4, sort_keys=True)
         db.session.close()
         return out

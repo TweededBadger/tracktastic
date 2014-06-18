@@ -138,6 +138,8 @@ class TestDataBase(unittest.TestCase):
         db = DBConnection(db_filename=testdb)
         pc = db.session.query(pst.db.ProcessCategory).one()
         self.assertTrue(pc.id == 0)
+        self.assertEqual(pc.process_filter[0].title_search,'')
+        self.assertEqual(pc.process_filter[0].filename_search,'')
         db.session.close()
         rm(testdb)
 
@@ -145,7 +147,7 @@ class TestDataBase(unittest.TestCase):
     def test_add_process_category(self):
         testdb = str(time.time()) + ".db"
         db = DBConnection(db_filename=testdb)
-        new_category = db.add_category(title="TITLE",title_search = "test",filename_search = "test")
+        new_category = db.add_category(title="TITLE")
         self.assertEquals(new_category.id,1)
         pc = db.session.query(pst.db.ProcessCategory).filter(pst.db.ProcessCategory.title == "TITLE").one()
         self.assertEquals(pc.id,1)
@@ -156,20 +158,39 @@ class TestDataBase(unittest.TestCase):
         testdb = str(time.time()) + ".db"
         db = DBConnection(db_filename=testdb)
         for x in xrange(0,10):
+        # x = 0
             current_process = pst.processes.get_current()
             random_title = random_string(10)
             random_filename = random_string(10)
             current_process.title = "TEST TITLE " + random_title
             current_process.filename = "TEST FILENAME " + random_filename
             process = db.add_process(current_process)
-            new_category = db.add_category(title="TITLE",title_search = random_title,filename_search = random_filename)
+            new_category = db.add_category(title="TITLE")
+            new_filter = db.add_filter(category_id=new_category.id,title_search = random_title,filename_search = random_filename)
             db.assign_categories()
             # processes = db.get_processes()
             processes = [pst.db.row2dict(row) for row in db.get_processes()]
-            self.assertEqual(new_category.id,int(processes[x]['process_categories'][1]['id']))
+            self.assertEqual(new_category.id,int(processes[x]['process_categories'][0]['id']))
+            self.assertEqual(new_filter.title_search,processes[x]['process_categories'][0]['filters'][0]['title_search'])
+            self.assertEqual(new_filter.filename_search,processes[x]['process_categories'][0]['filters'][0]['filename_search'])
         db.session.close()
         rm(testdb)
 
+    def test_add_process_category_filter(self):
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+
+        random_title = random_string(10)
+        random_filename = random_string(10)
+        new_category = db.add_category(title="TITLE")
+        new_filter = db.add_filter(category_id=new_category.id,title_search = random_title,filename_search = random_filename)
+
+        pc = db.session.query(pst.db.ProcessCategory).filter(pst.db.ProcessCategory.title == "TITLE").one()
+        self.assertEquals(pc.id,1)
+        self.assertEqual(pc.process_filter[0].title_search,random_title)
+        self.assertEqual(pc.process_filter[0].filename_search,random_filename)
+        db.session.close()
+        rm(testdb)
 
 
     def test_inactive_then_active_process(self):
@@ -216,21 +237,18 @@ class TestDataService(unittest.TestCase):
         self.testdb = str(time.time()) + ".db"
         self.db = DBConnection(db_filename=self.testdb)
         self.dataservice = DataService(self.testdb)
-
     def test_get_screenshots(self):
         testhelpers.take_and_add_screenshots(self.db)
         data = self.dataservice.screenshots()
         # print data
         jsonobj = json.loads(data)
         self.assertTrue(len(jsonobj) > 0)
-
     def test_get_processes(self):
         testhelpers.add_process(self.db)
         data = self.dataservice.processes()
         # print data
         jsonobj = json.loads(data)
         self.assertTrue(len(jsonobj) > 0)
-
     def test_get_process_cats(self):
         testhelpers.add_process_and_type(self.db)
         process_data = self.dataservice.processes()
@@ -289,12 +307,54 @@ class TestWebService(BaseCherryPyTestCase):
         jsonobj = json.loads('\n\r'.join(response.body))
         new_cat = [x for x in jsonobj if x['title'] == test_title][0]
         self.assertEqual(new_cat['title'],test_title)
-        self.assertEqual(new_cat['title_search'],test_title_search)
-        self.assertEqual(new_cat['filename_search'],test_filename_search)
+        self.assertEqual(new_cat['filters'][0]['title_search'],test_title_search)
+        self.assertEqual(new_cat['filters'][0]['filename_search'],test_filename_search)
 
         process_responce = self.webapp_request('/data/processes',id=process.id)
         process_jsonobj = json.loads('\n\r'.join(process_responce.body))
-        self.assertEqual(new_cat['id'],process_jsonobj[0]['process_categories'][1]['id'])
+        self.assertEqual(new_cat['id'],process_jsonobj[0]['process_categories'][0]['id'])
+
+    def test_add_process_category_filter(self):
+        test_title = random_string(10)
+        test_title_search = random_string(10)
+        test_filename_search = random_string(10)
+        current_process = pst.processes.get_current()
+        current_process.title = "TEST TITLE " + test_title_search
+        current_process.filename = "TEST FILENAME " + test_filename_search
+        process = self.db.add_process(current_process)
+        response = self.webapp_request('/data/process_categories',
+                                      method='POST',
+                                      title=test_title,
+                                      title_search= test_title_search,
+                                      filename_search=test_filename_search,
+                                      assign=True)
+        jsonobj = json.loads('\n\r'.join(response.body))
+        new_cat = [x for x in jsonobj if x['title'] == test_title][0]
+        self.assertEqual(new_cat['title'],test_title)
+        self.assertEqual(new_cat['filters'][0]['title_search'],test_title_search)
+        self.assertEqual(new_cat['filters'][0]['filename_search'],test_filename_search)
+
+        test_title_search2 = random_string(10)
+        test_filename_search2 = random_string(10)
+
+        response2 = self.webapp_request('/data/category_filters',
+                                       method='POST',
+                                       title_search= test_title_search2,
+                                        filename_search=test_filename_search2,
+                                        category_id= new_cat['id'],
+                                        assign=True
+                                       )
+        jsonobj2 = json.loads('\n\r'.join(response2.body))
+
+
+        response3 = self.webapp_request('/data/process_categories')
+        jsonobj3 = json.loads('\n\r'.join(response3.body))
+        new_cat2 = [x for x in jsonobj3 if x['title'] == test_title][0]
+        self.assertGreater(len(new_cat2['filters']),1)
+        self.assertEqual(new_cat2['filters'][1]['title_search'],test_title_search2)
+        self.assertEqual(new_cat2['filters'][1]['filename_search'],test_filename_search2)
+
+
 
     def test_delete_process_category(self):
         test_title = random_string(10)
@@ -309,8 +369,8 @@ class TestWebService(BaseCherryPyTestCase):
         jsonobj = json.loads('\n\r'.join(response.body))
         new_cat = [x for x in jsonobj if x['title'] == test_title][0]
         self.assertEqual(new_cat['title'],test_title)
-        self.assertEqual(new_cat['title_search'],test_title_search)
-        self.assertEqual(new_cat['filename_search'],test_filename_search)
+        self.assertEqual(new_cat['filters'][0]['title_search'],test_title_search)
+        self.assertEqual(new_cat['filters'][0]['filename_search'],test_filename_search)
 
         response2 = self.webapp_request('/data/process_categories',
                                       method='DELETE',
@@ -324,9 +384,12 @@ class TestWebService(BaseCherryPyTestCase):
 
 
     def test_reorder(self):
-        new_cat_1 = self.db.add_category(title="TITLE1",title_search = "",filename_search = "")
-        new_cat_2 = self.db.add_category(title="TITLE2",title_search = "",filename_search = "")
+        new_cat_1 = self.db.add_category(title="TITLE1")
+        new_cat_2 = self.db.add_category(title="TITLE2")
+        new_cat_1_filter = self.db.add_filter(new_cat_1.id)
+        new_cat_2_filter = self.db.add_filter(new_cat_2.id)
         cats = [pst.db.row2dict(row) for row in self.db.get_process_categories()]
+        self.assertGreater(len(cats),2)
         for cat in cats:
             if cat['title'] == "TITLE2":
                 cat['order'] = 1

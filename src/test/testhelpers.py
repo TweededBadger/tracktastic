@@ -26,7 +26,10 @@ def add_process_and_type(db):
     current_process.title = "TEST TITLE " + random_title
     current_process.filename = "TEST FILENAME " + random_filename
     process = db.add_process(current_process)
-    new_category = db.add_category(title="TITLE",title_search = random_title,filename_search = random_filename)
+    new_category = db.add_category(title="TITLE")
+    new_filter = db.add_filter(title_search = random_title,
+                               filename_search = random_filename,
+                               category_id=new_category.id)
     db.assign_categories()
 
 
