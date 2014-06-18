@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <script src="js/extras.js"></script>
+    <!--<script src="js/jquery-2.1.1.js"></script>-->
+    <script src="js/jquery-2.1.1.js"></script>
+    <script src="js/jquery-ui-1.10.4.js"></script>
+    <!--<script type='text/javascript' src='http://code.jquery.com/jquery-1.8.3.js'></script>-->
+    <!--<script type='text/javascript' src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.23/jquery-ui.min.js"></script>-->
+    <script src="js/angular.js"></script>
+    <script src="js/ui-bootstrap-tpls-0.11.0.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui/0.4.0/angular-ui.min.js"></script>
+    <script src="js/angular-route.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/controllers.js"></script>
+    <script src="js/controllers/pickerCtrl.js"></script>
+    <script src="js/controllers/processCategoryCtrl.js"></script>
+    <script src="js/directives/picker.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.css"/>
+    <link rel="stylesheet" href="css/bootstrap-theme.css"/>
+</head>
+<body>
+
+<div ng:controller="controller">
+    <ul ui:sortable ng:model="list">
+        <li ng:repeat="item in list" class="item">{{item}}</li>
+    </ul>
+    <hr />
+    <div ng:repeat="item in list">{{item}}</div>
+</div>
+<script>
+    var myapp = angular.module('myapp', ['ui']);
+
+    myapp.controller('controller', function ($scope) {
+        $scope.list = ["one", "two", "three", "four", "five", "six"];
+    });
+
+    angular.bootstrap(document, ['myapp']);
+</script>
+<style>
+    .item, .placeholder {
+        padding: 2px;
+        width: 50px;
+        height: 20px;
+        border: 1px solid #333;
+        background: #EEE;
+    }
+
+    .placeholder {
+        background: #AEF;
+    }
+</style>
+
+</body>
+</html>

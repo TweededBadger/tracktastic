@@ -1,21 +1,25 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import json
 import unittest
 import os
 import datetime
 import time
+import cherrypy
 import pst
 import pst as Scheduler
-
+from pst.ActivityChecker import ActivityChecker
 
 import pst.Process
 import pst.screenshots
 import pst.db
 from pst.db import DBConnection
-from pst.helpers import rm
+from pst.helpers import rm,random_string
 
 import pst.WebServer
 from pst.DataService import DataService
 from test import testhelpers
+from test.testhelpers import BaseCherryPyTestCase
 
 
 class TestProcessFetcher(unittest.TestCase):
@@ -63,6 +67,21 @@ class TestDataBase(unittest.TestCase):
         self.assertTrue(type(process) is pst.db.DBProcess)
         db.session.close()
 
+    def test_save_and_update_process(self):
+        # testdb = str(time.time())+".db"
+        testdb = "test.db"
+        current_process = pst.processes.get_current()
+        current_process.title = "TITLE: Unicode HOWTO � Python v2.7.7 documentation - Google Chrome"
+        db = DBConnection(db_filename=testdb)
+        process_start = db.add_process(current_process)
+        time.sleep(0.5)
+        second_current_process = pst.processes.get_current()
+        process_end = db.add_process(current_process)
+        process_end.title = "TITLE: Unicode HOWTO � Python v2.7.7 documentation - Google Chrome"
+        self.assertEquals(process_start.id,process_end.id);
+        self.assertNotEquals(process_end.start_time,process_end.end_time);
+        db.session.close()
+        # rm(testdb)
     def test_save_screenshot(self):
         testdb = str(time.time()) + ".db"
         db = DBConnection(db_filename=testdb)
@@ -119,6 +138,188 @@ class TestDataBase(unittest.TestCase):
         db = DBConnection(db_filename=testdb)
         pc = db.session.query(pst.db.ProcessCategory).one()
         self.assertTrue(pc.id == 0)
+        self.assertEqual(pc.process_filter[0].title_search,'')
+        self.assertEqual(pc.process_filter[0].filename_search,'')
+        db.session.close()
+        rm(testdb)
+
+
+    def test_add_process_category(self):
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+        new_category = db.add_category(title="TITLE")
+        self.assertEquals(new_category.id,1)
+        pc = db.session.query(pst.db.ProcessCategory).filter(pst.db.ProcessCategory.title == "TITLE").one()
+        self.assertEquals(pc.id,1)
+        db.session.close()
+        rm(testdb)
+
+    def test_add_process_and_process_category_and_assign(self):
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+        for x in xrange(0,10):
+        # x = 0
+            current_process = pst.processes.get_current()
+            random_title = random_string(10)
+            random_filename = random_string(10)
+            current_process.title = "TEST TITLE " + random_title
+            current_process.filename = "TEST FILENAME " + random_filename
+            process = db.add_process(current_process)
+            new_category = db.add_category(title="TITLE")
+            new_filter = db.add_filter(category_id=new_category.id,title_search = random_title,filename_search = random_filename)
+            db.assign_categories()
+            # processes = db.get_processes()
+            processes = [pst.db.row2dict(row) for row in db.get_processes()]
+            self.assertEqual(new_category.id,int(processes[x]['process_categories'][0]['id']))
+            self.assertEqual(new_filter.title_search,processes[x]['process_categories'][0]['filters'][0]['title_search'])
+            self.assertEqual(new_filter.filename_search,processes[x]['process_categories'][0]['filters'][0]['filename_search'])
+        db.session.close()
+        rm(testdb)
+
+    def test_add_process_category_filter(self):
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+
+        random_title = random_string(10)
+        random_filename = random_string(10)
+        new_category = db.add_category(title="TITLE")
+        new_filter = db.add_filter(category_id=new_category.id,title_search = random_title,filename_search = random_filename)
+
+        pc = db.session.query(pst.db.ProcessCategory).filter(pst.db.ProcessCategory.title == "TITLE").one()
+        self.assertEquals(pc.id,1)
+        self.assertEqual(pc.process_filter[0].title_search,random_title)
+        self.assertEqual(pc.process_filter[0].filename_search,random_filename)
+        db.session.close()
+        rm(testdb)
+
+
+
+    def test_delete_category_and_filter(self):
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+        random_title = random_string(10)
+        random_filename = random_string(10)
+        new_category = db.add_category(title="TITLE")
+        new_filter = db.add_filter(category_id=new_category.id,title_search = random_title,filename_search = random_filename)
+
+        pc = db.session.query(pst.db.ProcessCategory).filter(pst.db.ProcessCategory.title == "TITLE").one()
+        self.assertEquals(pc.id,1)
+        self.assertEqual(pc.process_filter[0].title_search,random_title)
+        self.assertEqual(pc.process_filter[0].filename_search,random_filename)
+
+        temp_id = new_category.id
+        db.delete_category(new_category.id)
+        pc = db.session.query(pst.db.ProcessCategory).filter(pst.db.ProcessCategory.title == "TITLE")
+        self.assertEqual(pc.count(),0)
+        filter = db.session.query(pst.db.ProcessFilter).filter(pst.db.ProcessFilter.process_category_id == temp_id)
+        self.assertEqual(filter.count(),0)
+
+
+
+        db.session.close()
+        rm(testdb)
+
+
+    def test_incorrect_process_filter(self):
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+        for x in xrange(0,10):
+        # x = 0
+            current_process = pst.processes.get_current()
+            random_title = random_string(10)
+            random_filename = random_string(10)
+            current_process.title = "Developer Tools - http://127.0.0.1:8081/" + random_title
+            current_process.filename = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+            process = db.add_process(current_process)
+            new_category = db.add_category(title="TITLE")
+            random_title2 = "TimeTracker"
+            random_filename2 = ""
+            new_filter = db.add_filter(category_id=new_category.id,title_search = random_title2,filename_search = random_filename2)
+            db.assign_categories()
+            # processes = db.get_processes()
+            processes = [pst.db.row2dict(row) for row in db.get_processes()]
+            self.assertEqual(0,int(processes[x]['process_categories'][0]['id']))
+            self.assertEqual('',processes[x]['process_categories'][0]['filters'][0]['title_search'])
+            self.assertEqual('',processes[x]['process_categories'][0]['filters'][0]['filename_search'])
+        db.session.close()
+        rm(testdb)
+
+    def test_add_process_and_process_category_and_assign_and_delete(self):
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+        tests_to_run = 5
+        for x in xrange(0,tests_to_run):
+        # x = 0
+            current_process = pst.processes.get_current()
+            random_title = random_string(10)
+            random_filename = random_string(10)
+            current_process.title = "TEST TITLE " + random_title
+            current_process.filename = "TEST FILENAME " + random_filename
+            process = db.add_process(current_process)
+            new_category = db.add_category(title="TITLE")
+            new_filter = db.add_filter(category_id=new_category.id,title_search = random_title,filename_search = random_filename)
+            db.assign_categories()
+            # processes = db.get_processes()
+            processes = [pst.db.row2dict(row) for row in db.get_processes()]
+            self.assertEqual(new_category.id,int(processes[x]['process_categories'][0]['id']))
+            self.assertEqual(new_filter.title_search,processes[x]['process_categories'][0]['filters'][0]['title_search'])
+            self.assertEqual(new_filter.filename_search,processes[x]['process_categories'][0]['filters'][0]['filename_search'])
+
+        processes = db.get_processes()
+        for process in processes:
+            db.delete_category(process[1].id)
+            db.assign_categories()
+
+        association_table_data = db.session.query('* FROM association')
+
+        self.assertEqual(tests_to_run,association_table_data.count())
+
+        processes = db.get_processes()
+        for process in processes:
+            self.assertEqual(process[1].process_categories[0].title,'unassigned')
+            self.assertEqual(len(process[1].process_categories),1)
+
+        for process in processes:
+            random_title = random_string(10)
+            random_filename = random_string(10)
+            new_category = db.add_category(title="TITLE")
+            new_filter = db.add_filter(category_id=new_category.id,title_search = random_title,filename_search = random_filename)
+
+        db.assign_categories()
+        processes = db.get_processes()
+        for process in processes:
+            self.assertEqual(process[1].process_categories[0].title,'unassigned')
+            self.assertEqual(len(process[1].process_categories),1)
+
+
+        db.session.close()
+        rm(testdb)
+
+    def test_inactive_then_active_process(self):
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+        current_process = pst.processes.get_current()
+        db.add_process(current_process)
+        time.sleep(0.1)
+        db.set_current_process_inactive()
+        time.sleep(0.1)
+        db.add_process(current_process)
+        time.sleep(0.1)
+        db.set_current_process_inactive()
+
+        processes = [pst.db.row2dict(row) for row in db.get_processes()]
+        self.assertEqual(len(processes),2)
+        self.assertGreater(processes[0]['end_time'],processes[0]['start_time'])
+        self.assertGreater(processes[1]['end_time'],processes[1]['start_time'])
+        self.assertGreater(processes[1]['start_time'],processes[0]['end_time'])
+
+        db.session.close()
+        rm(testdb)
+
+
+    def test_new_type_auto_assignemnt(self):
+        self.assertTrue(False)
+
 
 
 class TestScheduler(unittest.TestCase):
@@ -138,24 +339,261 @@ class TestScheduler(unittest.TestCase):
         self.assertTrue(thread_run)
 
 class TestDataService(unittest.TestCase):
+    def setUp(self):
+        self.testdb = str(time.time()) + ".db"
+        self.db = DBConnection(db_filename=self.testdb)
+        self.dataservice = DataService(self.testdb)
     def test_get_screenshots(self):
-        testdb = str(time.time()) + ".db"
-        db = DBConnection(db_filename=testdb)
-        testhelpers.take_and_add_screenshots(db)
-
-        dataservice = DataService(testdb)
-        data = dataservice.screenshots()
-        print data
+        testhelpers.take_and_add_screenshots(self.db)
+        data = self.dataservice.screenshots()
+        # print data
         jsonobj = json.loads(data)
         self.assertTrue(len(jsonobj) > 0)
-        db.session.close()
-
     def test_get_processes(self):
-        testdb = str(time.time()) + ".db"
-        db = DBConnection(db_filename=testdb)
-        testhelpers.add_process(db)
-        dataservice = DataService(testdb)
-        data = dataservice.processes()
-        print data
+        testhelpers.add_process(self.db)
+        data = self.dataservice.processes()
+        # print data
         jsonobj = json.loads(data)
         self.assertTrue(len(jsonobj) > 0)
+    def test_get_process_cats(self):
+        testhelpers.add_process_and_type(self.db)
+        process_data = self.dataservice.processes()
+        process_type_data = self.dataservice.process_categories()
+        print process_type_data
+        jsonobj = json.loads(process_type_data)
+        self.assertTrue(len(jsonobj) > 0)
+    def tearDown(self):
+        self.db.session.close()
+        rm(self.testdb)
+
+
+
+
+class TestWebService(BaseCherryPyTestCase):
+
+    def setUp(self):
+
+        self.testdb = str(time.time()) + ".db"
+        self.db = DBConnection(db_filename=self.testdb)
+        # testhelpers.add_process_and_type(self.db)
+
+        WEB_PORT = 8076
+        self.local = cherrypy.lib.httputil.Host('127.0.0.1', 50000, "")
+        self.remote  = cherrypy.lib.httputil.Host('127.0.0.1', WEB_PORT, "")
+        SCREENSHOT_FOLDER = "testscreenshots/"
+        self.server = pst.WebServer({
+            'port':WEB_PORT,
+            'screenshots_dir':SCREENSHOT_FOLDER,
+            'db':self.testdb
+        })
+
+    def test_get_process_categories(self):
+        response = self.webapp_request('/data/process_categories')
+        self.assertEqual(response.output_status, '200 OK')
+        # response body is wrapped into a list internally by CherryPy
+        jsonobj = json.loads('\n\r'.join(response.body))
+        print jsonobj
+        self.assertTrue(len(jsonobj) > 0)
+        # self.assertEqual(response.body, ['hello world'])
+
+    def test_create_process_category(self):
+        test_title = random_string(10)
+        test_title_search = random_string(10)
+        test_filename_search = random_string(10)
+        current_process = pst.processes.get_current()
+        current_process.title = "TEST TITLE " + test_title_search
+        current_process.filename = "TEST FILENAME " + test_filename_search
+        process = self.db.add_process(current_process)
+        response = self.webapp_request('/data/process_categories',
+                                      method='POST',
+                                      title=test_title,
+                                      title_search= test_title_search,
+                                      filename_search=test_filename_search,
+                                      assign=True)
+        jsonobj = json.loads('\n\r'.join(response.body))
+        new_cat = [x for x in jsonobj if x['title'] == test_title][0]
+        self.assertEqual(new_cat['title'],test_title)
+        self.assertEqual(new_cat['filters'][0]['title_search'],test_title_search)
+        self.assertEqual(new_cat['filters'][0]['filename_search'],test_filename_search)
+
+        process_responce = self.webapp_request('/data/processes',id=process.id)
+        process_jsonobj = json.loads('\n\r'.join(process_responce.body))
+        self.assertEqual(new_cat['id'],process_jsonobj[0]['process_categories'][0]['id'])
+
+    def test_add_process_category_filter(self):
+        test_title = random_string(10)
+        test_title_search = random_string(10)
+        test_filename_search = random_string(10)
+        current_process = pst.processes.get_current()
+        current_process.title = "TEST TITLE " + test_title_search
+        current_process.filename = "TEST FILENAME " + test_filename_search
+        process = self.db.add_process(current_process)
+        response = self.webapp_request('/data/process_categories',
+                                      method='POST',
+                                      title=test_title,
+                                      title_search= test_title_search,
+                                      filename_search=test_filename_search,
+                                      assign=True)
+        jsonobj = json.loads('\n\r'.join(response.body))
+        new_cat = [x for x in jsonobj if x['title'] == test_title][0]
+        self.assertEqual(new_cat['title'],test_title)
+        self.assertEqual(new_cat['filters'][0]['title_search'],test_title_search)
+        self.assertEqual(new_cat['filters'][0]['filename_search'],test_filename_search)
+        test_title_search2 = random_string(10)
+        test_filename_search2 = random_string(10)
+        response2 = self.webapp_request('/data/category_filters',
+                                       method='POST',
+                                       title_search= test_title_search2,
+                                        filename_search=test_filename_search2,
+                                        category_id= new_cat['id'],
+                                        assign=True
+                                       )
+        jsonobj2 = json.loads('\n\r'.join(response2.body))
+        response3 = self.webapp_request('/data/process_categories')
+        jsonobj3 = json.loads('\n\r'.join(response3.body))
+        new_cat2 = [x for x in jsonobj3 if x['title'] == test_title][0]
+        self.assertGreater(len(new_cat2['filters']),1)
+        self.assertEqual(new_cat2['filters'][1]['title_search'],test_title_search2)
+        self.assertEqual(new_cat2['filters'][1]['filename_search'],test_filename_search2)
+
+
+
+    def test_delete_process_category(self):
+        test_title = random_string(10)
+        test_title_search = random_string(10)
+        test_filename_search = random_string(10)
+        response = self.webapp_request('/data/process_categories',
+                                      method='POST',
+                                      title=test_title,
+                                      title_search= test_title_search,
+                                      filename_search=test_filename_search,
+                                      assign=True)
+        jsonobj = json.loads('\n\r'.join(response.body))
+        new_cat = [x for x in jsonobj if x['title'] == test_title][0]
+        self.assertEqual(new_cat['title'],test_title)
+        self.assertEqual(new_cat['filters'][0]['title_search'],test_title_search)
+        self.assertEqual(new_cat['filters'][0]['filename_search'],test_filename_search)
+        response2 = self.webapp_request('/data/process_categories',
+                                      method='DELETE',
+                                      id=new_cat['id'],
+                                      assign=True)
+        jsonobj2 = json.loads('\n\r'.join(response2.body))
+        print jsonobj2
+        self.assertEqual(len(jsonobj2),1)
+        self.assertEqual(len([x for x in jsonobj2 if x['title'] == test_title]),0)
+
+    def test_delete_category_filter(self):
+        test_title = random_string(10)
+        test_title_search = random_string(10)
+        test_filename_search = random_string(10)
+        response = self.webapp_request('/data/process_categories',
+                                      method='POST',
+                                      title=test_title,
+                                      title_search= test_title_search,
+                                      filename_search=test_filename_search,
+                                      assign=True)
+        jsonobj = json.loads('\n\r'.join(response.body))
+        new_cat = [x for x in jsonobj if x['title'] == test_title][0]
+        self.assertEqual(new_cat['title'],test_title)
+        self.assertEqual(new_cat['filters'][0]['title_search'],test_title_search)
+        self.assertEqual(new_cat['filters'][0]['filename_search'],test_filename_search)
+        test_title_search2 = random_string(10)
+        test_filename_search2 = random_string(10)
+        response2 = self.webapp_request('/data/category_filters',
+                                       method='POST',
+                                       title_search= test_title_search2,
+                                        filename_search=test_filename_search2,
+                                        category_id= new_cat['id'],
+                                        assign=True
+                                       )
+
+        response3 = self.webapp_request('/data/process_categories')
+        jsonobj3 = json.loads('\n\r'.join(response3.body))
+        new_cat2 = [x for x in jsonobj3 if x['title'] == test_title][0]
+        self.assertGreater(len(new_cat2['filters']),1)
+        self.assertEqual(new_cat2['filters'][1]['title_search'],test_title_search2)
+        self.assertEqual(new_cat2['filters'][1]['filename_search'],test_filename_search2)
+
+        response4 = self.webapp_request('/data/category_filters',
+                                       method='DELETE',
+                                       id=new_cat2['filters'][1]['id'],
+                                       category_id= new_cat2['id'],
+                                        assign=True
+                                       )
+        jsonobj4 = json.loads('\n\r'.join(response4.body))
+        self.assertEqual(1,len(jsonobj4))
+
+        response5 = self.webapp_request('/data/process_categories')
+        jsonobj5 = json.loads('\n\r'.join(response3.body))
+        new_cat5 = [x for x in jsonobj5 if x['title'] == test_title][0]
+        self.assertGreater(len(new_cat5['filters']),1)
+
+
+
+    def test_reorder(self):
+        new_cat_1 = self.db.add_category(title="TITLE1")
+        new_cat_2 = self.db.add_category(title="TITLE2")
+        new_cat_1_filter = self.db.add_filter(new_cat_1.id)
+        new_cat_2_filter = self.db.add_filter(new_cat_2.id)
+        cats = [pst.db.row2dict(row) for row in self.db.get_process_categories()]
+        self.assertGreater(len(cats),2)
+        for cat in cats:
+            if cat['title'] == "TITLE2":
+                cat['order'] = 1
+            if cat['title'] == "TITLE1":
+                cat['order'] = 2
+        test_json = json.dumps(cats, indent=4, sort_keys=True)
+        response = self.webapp_request('/data/reorder_categories',
+                                      method='POST',
+                                      data=test_json)
+
+        jsonobj = json.loads('\n\r'.join(response.body))
+        new_cat_1_amended_from_json = [x for x in jsonobj if x['title'] == "TITLE1"][0]
+        new_cat_2_amended_from_json = [x for x in jsonobj if x['title'] == "TITLE2"][0]
+        self.assertEqual(int(new_cat_1_amended_from_json['order']),2)
+        self.assertEqual(int(new_cat_2_amended_from_json['order']),1)
+
+        self.db.session.close()
+        self.db = DBConnection(db_filename=self.testdb)
+
+        cats2 = [pst.db.row2dict(row) for row in self.db.get_process_categories()]
+        new_cat_1_amended = [x for x in cats2 if x['title'] == "TITLE1"][0]
+        new_cat_2_amended = [x for x in cats2 if x['title'] == "TITLE2"][0]
+        self.assertEqual(int(new_cat_1_amended['order']),2)
+        self.assertEqual(int(new_cat_2_amended['order']),1)
+
+
+
+    def tearDown(self):
+        self.server.close()
+        self.db.session.close()
+        rm(self.testdb)
+
+
+class TestActivityCheckerMouse(unittest.TestCase):
+    def setUp(self):
+        self.ac = ActivityChecker()
+    def test_activity_checker_creation(self):
+        time.sleep(0.5)
+        self.assertTrue(self.ac.active)
+    def test_no_activity(self):
+        self.ac.timeout = 1
+        print "Don't move the mouse"
+        time.sleep(2)
+        self.assertFalse(self.ac.checkActive())
+    def test_activity(self):
+        self.ac.timeout = 1
+        print "Move the mouse"
+        time.sleep(2)
+        self.assertTrue(self.ac.checkActive())
+    def tearDown(self):
+        self.ac.stop()
+        time.sleep(0.5)
+
+
+
+
+
+
+
+

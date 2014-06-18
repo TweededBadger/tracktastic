@@ -11,6 +11,7 @@ class WebServer():
         current_dir = os.path.dirname(os.path.abspath(__file__))
         options.setdefault('port', 8081)
         options.setdefault('screenshots_dir', current_dir)
+        options.setdefault('db', "pst.db")
         options_dict = {
             'server.socket_port': options['port'],
             'log.screen':True
@@ -30,17 +31,24 @@ class WebServer():
                 'tools.staticdir.dir': options['screenshots_dir']
             }
         }
-        app = cherrypy.tree.mount(WebInterface(), '/', conf)
+        self.web_interface = WebInterface(db_file=options['db'])
+        app = cherrypy.tree.mount(self.web_interface, '/', conf)
         cherrypy.server.start()
         cherrypy.server.wait()
+    def close(self):
+        cherrypy.engine.exit()
 
 
 class WebInterface():
-    def __init__(self):
+    def __init__(self,db_file):
+        self.db_file = db_file
+        self.data = DataService(dbname=self.db_file)
         pass
     @cherrypy.expose
     def index(self):
         pass
 
-    data = DataService()
+
+
+
 

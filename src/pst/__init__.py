@@ -8,6 +8,7 @@ from .Process import Process
 from .db import DBConnection
 from .WebServer import WebServer
 import processes
+from pst.ActivityChecker import ActivityChecker
 import screenshots
 
 config = ConfigObj("config.ini")
@@ -17,9 +18,9 @@ class Main():
     def __init__(self):
         self.db = DBConnection()
         # self.schedule_camera = Scheduler(ScreenshotLoop(db=self.db),
-        #                                  cycleTime=datetime.timedelta(seconds=10),threadName="CameraThread")
+        #                                  cycleTime=datetime.timedelta(seconds=1),threadName="CameraThread")
         # self.schedule_camera.thread.start()
-        self.process_loop = Scheduler(ProccessLoop(db=self.db), cycleTime=datetime.timedelta(seconds=10),threadName="ProcessThread")
+        self.process_loop = Scheduler(ProcessLoop(db=self.db), cycleTime=datetime.timedelta(seconds=1),threadName="ProcessThread")
         self.process_loop.thread.start()
 
         self.start_webserver()
@@ -30,11 +31,7 @@ class Main():
         except:
             WEB_PORT = 8081
 
-        try:
-            SCREENSHOT_FOLDER = config['screenshot_folder']
-        except:
-            SCREENSHOT_FOLDER = "screenshots/"
-
+        SCREENSHOT_FOLDER = config['screenshot_folder']
 
         self.server = WebServer({
             'port':WEB_PORT,
@@ -54,14 +51,17 @@ class ScreenshotLoop():
             screenshot = self.db.add_screenshot(screenshot_id, screenshot_path)
 
 
-class ProccessLoop():
+class ProcessLoop():
     def __init__(self, db):
         self.db = DBConnection()
-
+        self.ac = ActivityChecker()
     def run(self):
-        current_process = processes.get_current()
-        print current_process.title
-        self.db.add_process(current_process)
+        if (self.ac.checkActive()):
+            current_process = processes.get_current()
+            added_process = self.db.add_process(current_process)
+        else:
+            self.db.set_current_process_inactive()
+        pass
 
 
 def main():
