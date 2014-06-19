@@ -9,6 +9,7 @@
     <script src="js/jquery-ui-1.10.4.js"></script>
     <script src="js/angular.js"></script>
     <script src="js/angular-cookies.js"></script>
+    <script src="js/angular-route.js"></script>
     <script src="js/ui-bootstrap-tpls-0.11.0.js"></script>
     <script src="js/sortable.js"></script>
     <!--<script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui/0.4.0/angular-ui.min.js"></script>-->
@@ -20,22 +21,28 @@
     <script src="js/directives/picker.js"></script>
     <link rel="stylesheet" href="css/bootstrap.css"/>
     <link rel="stylesheet" href="css/bootstrap-theme.css"/>
+    <link rel="stylesheet" href="css/main.css"/>
 
     <style>
         .grid .tick {
             stroke: lightgrey;
             opacity: 0.7;
         }
+
         .grid path {
             stroke-width: 0;
         }
+
         .details_panel {
             position: absolute;
+            z-index: 999;
         }
+
         .process-categories .btn-group {
             width: 100%;
             padding: 0;
         }
+
         .process-categories .btn-group .btn-default {
             width: 70%;
             /*padding: 0;*/
@@ -44,140 +51,19 @@
     </style>
 </head>
 <body class="container">
-<div ng-controller="TracktasticCtrl">
 
-    <div class="row" picker>
-        <div class="col-xs-2">
-            <p class="input-group">
-                <input type="text" class="form-control" datepicker-popup="dd-MM-yy" ng-model="pickerStartTime"
-                       is-open="openedStart" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions"
-                       date-disabled="disabled(date, mode)" ng-required="true" close-text="Close"/>
-              <span class="input-group-btn">
-                <button type="button" class="btn btn-default" ng-click="openStart($event)"><i
-                        class="glyphicon glyphicon-calendar"></i></button>
-              </span>
-            </p>
-            <p class="input-group">
-                <timepicker ng-model="pickerStartTime" hour-step="hstep" minute-step="mstep"
-                            show-meridian="ismeridian"></timepicker>
-            </p>
-        </div>
-        <div class="col-xs-2">
-            <p class="input-group">
-                <input type="text" class="form-control" datepicker-popup="dd-MM-yy" ng-model="pickerEndTime"
-                       is-open="openedEnd" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions"
-                       date-disabled="disabled(date, mode)" ng-required="true" close-text="Close"/>
-              <span class="input-group-btn">
-                <button type="button" class="btn btn-default" ng-click="openEnd($event)"><i
-                        class="glyphicon glyphicon-calendar"></i></button>
-              </span>
-            </p>
-
-            <p class="input-group">
-                <timepicker ng-model="pickerEndTime" hour-step="hstep" minute-step="mstep"
-                            show-meridian="ismeridian"></timepicker>
-            </p>
-
-        </div>
-
-
-    </div>
-
-    <!--<d3-barsxx data="data"></d3-barsxx>-->
-    <d3-process bar-padding=20 data="processes"
-                start-time="pickerStartTime" end-time="pickerEndTime"
-                test="testfunc()" label="Label"
-                on-click="trackClick(item,event)"
-                redraw="redraw" viewable-categories="viewableCategories"></d3-process>
-
-    <div>
-        <div>TOTAL: {{pickerEndTime-pickerStartTime | date:'HH:mm'}}</div>
-    </div>
-    <div class="details_panel panel panel-info" ng-show="showDetailPanel"  ng-style="detailsStyle">
-        <div class="panel-heading">
-            <h4 class="ng-binding">{{detailItem.title}}</h4>
-        </div>
-        <div class="panel-body">
-
-        <p class="ng-binding">Process: {{detailItem.filename}}</p>
-        <p class="ng-binding">Start: {{convertDate(detailItem.start_time) | date:'HH:mm:ss'}}</p>
-        <p class="ng-binding">End: {{convertDate(detailItem.end_time) | date:'HH:mm:ss'}}</p>
-        </div>
-    </div>
-    <div ng:controller="ProcessCategoryCtrl">
-        <div class="col-xs-4">
-            <div ui:sortable ng:model="process_cats" class="process-categories">
-                <div ng:repeat="item in process_cats" class=" btn btn-group" style="cursor: move;">
-                    <div class="btn btn-default" ng-click="selectCat(item)">{{$index}} - {{item.title}}
-                    </div>
-                    <div class="btn btn-danger dropdown-toggle" ng-click="deleteCat(item)"><i class="glyphicon glyphicon-trash"></i>
-                    </div>
-                </div>
-            </div>
-            <hr/>
-            <!--<div ng:repeat="cat in process_cats">-->
-            <!--{{$index}} - {{cat.title}} - {{cat.order}}-->
-            <!--</div>-->
-            <div class="form-group row">
-                <label for="cat_name">Category Name:</label>
-                <input id="cat_name" class="form-control" type="text" ng-model="newcat.title"/>
-            </div>
-            <div class="form-group row">
-                <label for="cat_title_search">Title search:</label>
-                <input id="cat_title_search" class="form-control" type="text" ng-model="newcat.title_search"/>
-            </div>
-            <div class="form-group row">
-                <label for="cat_filename_search">Filename Search:</label>
-                <input id="cat_filename_search" class="form-control" type="text" ng-model="newcat.filename_search"/>
-            </div>
-            <button class="btn btn-primary btn-block"
-                    ng-click="addNewCategory(newcat)">
-                Add
-            </button>
-        </div>
-        <div class="col-xs-4">
-            <h1>{{selectedCat.title}}</h1>
-            <ul>
-                <li ng-repeat="filter in selectedCat.filters">{{filter.filename_search}} - {{filter.title_search}}
-                    <button class="btn btn-danger" ng-click="deleteFilter(filter)"><i
-                            class="glyphicon glyphicon-trash"></i></button>
-                </li>
-            </ul>
-            <div class="form-group row">
-                <label for="fitler_title_search">Title search:</label>
-                <input id="fitler_title_search" class="form-control" type="text" ng-model="newfilter.title_search"/>
-            </div>
-            <div class="form-group row">
-                <label for="filter_filename_search">Filename Search:</label>
-                <input id="filter_filename_search" class="form-control" type="text"
-                       ng-model="newfilter.filename_search"/>
-            </div>
-            <button class="btn btn-primary btn-block"
-                    ng-click="addNewFilter(newfilter)">
-                Add
-            </button>
-        </div>
-    </div>
-
-
-    <!--<div>-->
-    <!--Sort by: {{orderProp}}-->
-    <!--<select ui0 ng-model="orderProp">-->
-    <!--<option value="title">Alphabetical</option>-->
-    <!--<option value="datetime">Newest</option>-->
-    <!--<option value="-datetime">Oldest</option>-->
-    <!--</select>-->
-    <!--<ul>-->
-    <!--<li ng-repeat="process in processes | filter:query | orderBy:orderProp">-->
-    <!--<div>{{process.title}}</div>-->
-    <!--<div>{{process.datetime | date:'shortTime'}}</div>-->
-    <!--<div>{{process.filename}}</div>-->
-    <!--</li>-->
-    <!--</ul>-->
-    <!--</div>-->
+<div>
+    <a href="#/processes">Processes</a>
+    <a href="#/categories">Categories</a>
 </div>
 
-<!--<div ng-view></div>-->
+<div ng-view></div>
+
+
+<!--<d3-barsxx data="data"></d3-barsxx>-->
+
+
+
 
 
 <!--<script src="js/services.js"></script>-->

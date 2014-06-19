@@ -85,7 +85,7 @@ angular.module('trackApp')
                     assign:1
                 }
             }).success(function(data){
-
+//                $scope.process_cats = data;
             })
         }
 

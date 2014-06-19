@@ -12,14 +12,11 @@ trackApp.config(['$routeProvider',
     function ($routeProvider) {
         $routeProvider.
             when('/processes', {
-                templateUrl: 'partials/process-list.html',
-                controller: 'TracktasticCtrl'
+                templateUrl: 'partials/process-list.html'
+            }).
+            when('/categories', {
+                templateUrl: 'partials/category-list.html'
             })
-//        .
-//      when('/processes/:phoneId', {
-//        templateUrl: 'partials/phone-detail.html',
-//        controller: 'PhoneDetailCtrl'
-//      }).
             .otherwise({
                 redirectTo: '/processes'
             });
@@ -80,12 +77,16 @@ trackApp.directive('d3Process', ['d3Service','$filter', function (d3Service,$fil
                         })
                         .attr('y', function () {
 //                            return 0;
-                            return (pos * (barHeight + barPadding))+barPadding + topMargin;
+                            return (category.order * (barHeight + barPadding))+barPadding + topMargin;
                         })
                         .on('mouseover',function() {
                             return scope.onClick({item: data, event:event});
                         })
                         .on('mouseout',function() {
+                            return scope.onClick({item: data, event:event});
+                        })
+                        .on('contextmenu',function() {
+                            d3.event.preventDefault();
                             return scope.onClick({item: data, event:event});
                         })
                         .attr('fill', function () {
@@ -108,7 +109,7 @@ trackApp.directive('d3Process', ['d3Service','$filter', function (d3Service,$fil
                                 return 0;
                             })
                             .attr('y', function(){
-                                return ((key) * (barHeight + barPadding))+barHeight/2 + topMargin;
+                                return ((cat.order) * (barHeight + barPadding))+barHeight/2 + topMargin;
                             })
                             .text(cat.title + " - " + $filter('date')(cat.totalTime,'HH:mm') + " - " +  $filter('number')((cat.totalTime/(endtime-starttime))*100,1) + "%")
                             .attr("font-family", "sans-serif")

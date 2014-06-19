@@ -1,15 +1,81 @@
-Search: <input ng-model="query">
 
-Sort by: {{orderProp}}
-  <select ng-model="orderProp">
-    <option value="title">Alphabetical</option>
-    <option value="age">Newest</option>
-    <option value="-age">Oldest</option>
-  </select>
-<ul>
-    <li ng-repeat="process in processes | filter:query | orderBy:orderProp">
-        <div>{{process.title}}</div>
-        <div>{{process.datetime}}</div>
-        <div>{{process.filename}}</div>
-    </li>
+
+
+<div ng-controller="TracktasticCtrl">
+    <div class="row picker" picker>
+        <div class="">
+            <div class="input-group  datepicker">
+                <input type="text" class="form-control" datepicker-popup="dd-MM-yy" ng-model="pickerStartTime"
+                       is-open="openedStart" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions"
+                       date-disabled="disabled(date, mode)" ng-required="true" close-text="Close"/>
+              <span class="input-group-btn">
+                <button type="button" class="btn btn-default" ng-click="openStart($event)"><i
+                        class="glyphicon glyphicon-calendar"></i></button>
+              </span>
+            </div>
+            <div class="input-group">
+                <timepicker ng-model="pickerStartTime" hour-step="hstep" minute-step="mstep"
+                            show-meridian="ismeridian"></timepicker>
+            </div>
+
+            <div class="input-group datepicker">
+                <input type="text" class="form-control datepicker" datepicker-popup="dd-MM-yy" ng-model="pickerEndTime"
+                       is-open="openedEnd" min-date="minDate" max-date="'2015-06-22'" datepicker-options="dateOptions"
+                       date-disabled="disabled(date, mode)" ng-required="true" close-text="Close"/>
+              <span class="input-group-btn">
+                <button type="button" class="btn btn-default" ng-click="openEnd($event)"><i
+                        class="glyphicon glyphicon-calendar"></i></button>
+              </span>
+            </div>
+
+            <div class="input-group">
+                <timepicker ng-model="pickerEndTime" hour-step="hstep" minute-step="mstep"
+                            show-meridian="ismeridian"></timepicker>
+            </div>
+            <div class="input-group quickpick">
+                <div class="btn-group dropdown is-open=" status.isopen
+                ">
+                <button type="button" class="btn btn-primary dropdown-toggle" ng-disabled="disabled">
+                    Quick Pick <span class="carat"></span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li ng-repeat="choice in quickChoices">
+                        <a ng-click="quickChoiceChosen(choice)" href="#">{{ choice.title }}</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<d3-process bar-padding=20 data="processes"
+            start-time="pickerStartTime" end-time="pickerEndTime"
+            test="testfunc()" label="Label"
+            on-click="trackClick(item,event)"
+            redraw="redraw" viewable-categories="viewableCategories"></d3-process>
+<div>
+    <div>TOTAL: {{ pickerEndTime-pickerStartTime | date:'HH:mm'}}</div>
+</div>
+
+<div class="details_panel panel panel-info" ng-show="showDetailPanel" ng-style="detailsStyle">
+    <div class="panel-heading">
+        <h4 class="ng-binding">{{ detailItem.title }}</h4>
+    </div>
+    <div class="panel-body">
+
+        <p class="ng-binding">Process: {{ detailItem.filename }}</p>
+
+        <p class="ng-binding">Start: {{ convertDate(detailItem.start_time) | date:'HH:mm:ss'}}</p>
+
+        <p class="ng-binding">End: {{ convertDate(detailItem.end_time) | date:'HH:mm:ss'}}</p>
+    </div>
+</div>
+
+<ul ng-mouseleave="showContextPanel=false" class="dropdown-menu process-context" ng-show="showContextPanel" ng-style="processContextStyle">
+        <li><a ng-click="deleteProcess()">Delete</a></li>
+        <li><a ng-click="createCategory()">Create Category</a></li>
+        <li class="divider"></li>
+        <li><a href="#">Separated link</a></li>
 </ul>
