@@ -1,8 +1,8 @@
 var tracktastic = angular.module('tracktastic', []);
 
 tracktastic.controller('TracktasticCtrl',
-    ['$scope', '$http', '$cookieStore','$modal',
-        function ($scope, $http, $cookieStore,$modal) {
+    ['$scope', '$http', '$cookieStore','$modal','$location','Data',
+        function ($scope, $http, $cookieStore,$modal,$location,Data) {
 
             $scope.trackClick = function (item, event) {
                 $scope.detailItem = item;
@@ -36,7 +36,7 @@ tracktastic.controller('TracktasticCtrl',
                 }
             };
 
-            $scope.deleteProcess = function() {
+            $scope.deleteProcessModel = function() {
 //                alert("Delete "+$scope.detailItem.title);
                 var modalInstance = $modal.open({
                   templateUrl: 'partials/decision-model.html',
@@ -50,10 +50,28 @@ tracktastic.controller('TracktasticCtrl',
                 });
 
                 modalInstance.result.then(function (result) {
-                  alert(result);
+                  if (result) {
+                      $scope.deleteProcess($scope.detailItem);
+                  }
                 }, function () {
                   $log.info('Modal dismissed at: ' + new Date());
                 });
+            }
+            $scope.createCategory = function() {
+                Data.setSelectedProcess($scope.detailItem);
+                $location.path('/categories');
+
+            }
+            $scope.deleteProcess = function(item) {
+                $http({
+                    method: 'DELETE',
+                    url: 'data/processes/',
+                    params: {
+                        id:item.id
+                    }
+                }).success(function (data) {
+
+                })
             }
 
             $scope.$watch('pickerStartTime', function (oldValue, newValue) {
@@ -92,6 +110,18 @@ tracktastic.controller('TracktasticCtrl',
                 })
             }
         }]);
+
+tracktastic.factory('Data',function(){
+    var selectedProcess;
+    return {
+        setSelectedProcess:function(process){
+            selectedProcess = process;
+        },
+        getSelectedProcess:function(){
+            return selectedProcess;
+        }
+    }
+});
 
 
 var ModalInstanceCtrl = function ($scope, $modalInstance) {

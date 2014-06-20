@@ -39,6 +39,11 @@ class DataService:
         except:
             pid = False
 
+        if 'DELETE' in cherrypy.request.method:
+            id = cherrypy.request.params.get("id")
+            db.delete_process(id=id)
+            return json.dumps([])
+
         processes = [pst.db.row2dict(row) for row in db.get_processes(start_time=start_time,end_time=end_time,pid=pid)]
         out = json.dumps(processes, indent=4, sort_keys=True)
         db.session.close()

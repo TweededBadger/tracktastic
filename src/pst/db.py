@@ -64,6 +64,10 @@ class DBConnection():
         self.current_process = processtoadd
         return processtoadd
 
+    def delete_process(self,id):
+        self.session.query(DBProcess).filter(DBProcess.id == id).delete()
+        self.session.commit()
+
     def set_current_process_inactive(self):
         now = datetime.datetime.now()
         try:

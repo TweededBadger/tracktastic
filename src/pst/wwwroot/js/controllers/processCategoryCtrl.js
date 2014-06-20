@@ -1,10 +1,26 @@
-angular.module('trackApp')
+angular.module('tracktastic')
     .constant("baseUrl", 'data/')
-    .controller("ProcessCategoryCtrl",function($scope, $http,baseUrl) {
+    .controller("ProcessCategoryCtrl",function($scope, $http,baseUrl,Data) {
+
+        $scope.newcat = {
+            title:''
+        }
 
         $scope.selectedCat = undefined;
         $scope.$watchCollection('process_cats',function(oldValue,newValue){
             submitNewOrder(newValue);
+        });
+
+
+
+        $scope.$watch(function () { return Data.getSelectedProcess(); }, function (newValue) {
+            if (newValue) $scope.selectedProcess = newValue;
+            if (angular.isUndefined($scope.selectedProcess)) return false;
+            console.log($scope.selectedProcess);
+            $scope.newcat.title = $scope.selectedProcess.title;
+            $scope.newcat.title_search = $scope.selectedProcess.title;
+            $scope.newcat.filename_search = $scope.selectedProcess.filename;
+            Data.setSelectedProcess(undefined);
         });
 
         refreshData = function() {

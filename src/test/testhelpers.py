@@ -18,6 +18,7 @@ def take_and_add_screenshots(db):
 def add_process(db):
     current_process = pst.processes.get_current()
     process = db.add_process(current_process)
+    return process
 
 def add_process_and_type(db):
     current_process = pst.processes.get_current()

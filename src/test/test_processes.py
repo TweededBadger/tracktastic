@@ -316,6 +316,22 @@ class TestDataBase(unittest.TestCase):
         db.session.close()
         rm(testdb)
 
+    def test_delete_process(self):
+        testdb = str(time.time()) + ".db"
+        db = DBConnection(db_filename=testdb)
+        current_process = pst.processes.get_current()
+        process = db.add_process(current_process)
+
+        db.delete_process(id=process.id)
+
+        processes = db.get_processes()
+
+        self.assertEqual(processes.count(),0)
+
+        db.session.close()
+        rm(testdb)
+
+
 
     def test_new_type_auto_assignemnt(self):
         self.assertTrue(False)
@@ -456,6 +472,14 @@ class TestWebService(BaseCherryPyTestCase):
         self.assertEqual(new_cat2['filters'][1]['title_search'],test_title_search2)
         self.assertEqual(new_cat2['filters'][1]['filename_search'],test_filename_search2)
 
+    def test_delete_process(self):
+        added_process = testhelpers.add_process(self.db)
+        response = self.webapp_request('/data/processes',
+                                       method='DELETE',
+                                       id=added_process.id)
+        print response.body
+        processes = self.db.get_processes()
+        self.assertEqual(processes.count(),0)
 
 
     def test_delete_process_category(self):
